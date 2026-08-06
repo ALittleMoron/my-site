@@ -8,7 +8,7 @@ from core.auth.enums import RoleEnum
 from core.auth.schemas import JwtUser
 from core.knowledge.exceptions import KnowledgeConflictError, KnowledgeItemNotFoundError
 from core.knowledge.items.enums import KnowledgeItemKind
-from core.knowledge.items.schemas import KnowledgeItem
+from core.knowledge.items.schemas import KnowledgeItem, KnowledgeTag
 from core.knowledge.people.enums import PersonListSort
 from core.knowledge.people.schemas import (
     PeoplePage,
@@ -229,6 +229,34 @@ class TestPeopleApi(ApiTestCase):
         assert params.telegram == ""
         assert params.relationship_changes.delete_ids == ["4" * 32]
         assert params.relationship_changes.create[0].related_person_id == "2" * 32
+        assert call.kwargs["current_datetime"].tzinfo is not None
+
+    def test_delete_person_forwards_request_datetime(self) -> None:
+        self.people_use_case.delete_person.return_value = ()
+
+        response = self.api.delete_admin_person(person_id=1)
+
+        self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
+        assert (
+            self.people_use_case.delete_person.await_args.kwargs["current_datetime"].tzinfo
+            is not None
+        )
+
+    def test_update_tag_forwards_request_datetime(self) -> None:
+        tag = KnowledgeTag(
+            id="1" * 32,
+            author_username="test",
+            name="Career",
+            created_at=CURRENT_DATETIME,
+            updated_at=CURRENT_DATETIME,
+        )
+        self.tags_use_case.update_tag.return_value = tag
+
+        response = self.api.put_admin_knowledge_tag(tag_id=1, data={"name": "Career"})
+
+        self.asserts.status(response=response, expected_status=codes.OK)
+        current_datetime = self.tags_use_case.update_tag.await_args.kwargs["current_datetime"]
+        assert current_datetime.tzinfo is not None
 
     def test_update_rejects_telegram_longer_than_storage_contract(self) -> None:
         payload = person_update_payload()

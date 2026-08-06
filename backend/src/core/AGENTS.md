@@ -54,9 +54,11 @@ event_dispatchers.py    # Domain event/reporting interfaces; concrete transports
 - New core code must be domain dataclasses, value objects, use cases, services, interfaces, exceptions, or generators.
 - Use cases must be concrete standalone classes. Do not add abstract use-case interfaces,
   `Protocol` contracts, base use-case classes, or inheritance between use cases.
-- Use-case constructor attributes may contain only injected abstractions. Pass operation-specific
-  concrete values, such as the current timestamp, explicitly to public use-case methods; never
-  inject callable factories for those values into a use case.
+- Use-case constructor attributes may contain injected collaborating abstractions and class-based
+  generators or services. A class-based generator for random values or values derived from supplied
+  data is a valid collaborator; do not create a class whose only purpose is to provide the current
+  time. Pass operation-specific concrete values, especially current timestamps and policy/config
+  data, explicitly to public use-case methods, and never inject callable factories for them.
 - Use cases must contain orchestration only: do not add private/static helper methods or
   collection-transformation loops; place reusable business logic in services and
   construction/conversion logic in domain schema classmethods.

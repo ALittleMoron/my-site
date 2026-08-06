@@ -30,6 +30,8 @@ from infra.postgresql.storages.knowledge.items import KnowledgeItemsDatabaseStor
 from infra.postgresql.storages.knowledge.people import PeopleDatabaseStorage
 from tests.test_cases import StorageTestCase
 
+CURRENT_DATETIME = datetime(2026, 7, 30, 12, 0, tzinfo=UTC)
+
 
 class TestKnowledgeDatesStorage(StorageTestCase):
     @pytest_asyncio.fixture(autouse=True)
@@ -88,6 +90,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 date=KnowledgeDateValue(day=1, month=1, year=None),
                 author_username="admin",
             ),
+            today=CURRENT_DATETIME.date(),
         )
         december = await self.dates_use_case.create_date(
             params=KnowledgeDateCreateParams(
@@ -95,6 +98,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 date=KnowledgeDateValue(day=31, month=12, year=2020),
                 author_username="admin",
             ),
+            today=CURRENT_DATETIME.date(),
         )
         december = await self.dates_use_case.update_date(
             date_id=december.item.id,
@@ -106,6 +110,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 person_ids=[person.item.id],
             ),
             author_username="admin",
+            current_datetime=CURRENT_DATETIME,
         )
 
         ascending = await self.dates_use_case.list_dates(
@@ -148,6 +153,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
         await self.people_use_case.delete_person(
             person_id=person.item.id,
             author_username="admin",
+            current_datetime=CURRENT_DATETIME,
         )
         date_after_person_delete = await self.dates_use_case.get_date(
             date_id=december.item.id,
@@ -177,6 +183,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 date=KnowledgeDateValue(day=1, month=5, year=2020),
                 author_username="admin",
             ),
+            today=CURRENT_DATETIME.date(),
         )
         foreign_date = await self.dates_use_case.create_date(
             params=KnowledgeDateCreateParams(
@@ -184,6 +191,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 date=KnowledgeDateValue(day=2, month=5, year=2020),
                 author_username="other-admin",
             ),
+            today=CURRENT_DATETIME.date(),
         )
 
         with pytest.raises(PersonNotFoundError):
@@ -197,6 +205,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                     person_ids=[foreign_person.item.id],
                 ),
                 author_username="admin",
+                current_datetime=CURRENT_DATETIME,
             )
         with pytest.raises(KnowledgeItemNotFoundError):
             await self.dates_use_case.get_date(
@@ -230,6 +239,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
         object_names = await self.dates_use_case.delete_date(
             date_id=own_date.item.id,
             author_username="admin",
+            current_datetime=CURRENT_DATETIME,
         )
 
         assert object_names == ("attachments/date-private.txt",)
@@ -246,6 +256,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 date=KnowledgeDateValue(day=31, month=7, year=None),
                 author_username="admin",
             ),
+            today=CURRENT_DATETIME.date(),
         )
         own_august = await self.dates_use_case.create_date(
             params=KnowledgeDateCreateParams(
@@ -253,6 +264,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 date=KnowledgeDateValue(day=1, month=8, year=None),
                 author_username="admin",
             ),
+            today=CURRENT_DATETIME.date(),
         )
         await self.dates_use_case.create_date(
             params=KnowledgeDateCreateParams(
@@ -260,6 +272,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 date=KnowledgeDateValue(day=1, month=9, year=None),
                 author_username="admin",
             ),
+            today=CURRENT_DATETIME.date(),
         )
         await self.dates_use_case.create_date(
             params=KnowledgeDateCreateParams(
@@ -267,6 +280,7 @@ class TestKnowledgeDatesStorage(StorageTestCase):
                 date=KnowledgeDateValue(day=2, month=8, year=None),
                 author_username="other-admin",
             ),
+            today=CURRENT_DATETIME.date(),
         )
 
         details = await self.dates_storage.list_details_for_months(

@@ -137,13 +137,13 @@ class TestKnowledgeDatesApi(ApiTestCase):
         )
 
         self.asserts.status(response=response, expected_status=codes.CREATED)
-        self.use_case.create_date.assert_called_once_with(
-            params=KnowledgeDateCreateParams(
-                display_name="Годовщина",
-                date=KnowledgeDateValue(day=29, month=2, year=None),
-                author_username="test",
-            ),
+        call = self.use_case.create_date.call_args
+        assert call.kwargs["params"] == KnowledgeDateCreateParams(
+            display_name="Годовщина",
+            date=KnowledgeDateValue(day=29, month=2, year=None),
+            author_username="test",
         )
+        assert call.kwargs["today"].year >= 2026
 
     def test_update_maps_people_tags_and_rejects_duplicate_people(self) -> None:
         self.use_case.update_date.return_value = date_response()
@@ -154,17 +154,17 @@ class TestKnowledgeDatesApi(ApiTestCase):
         response = self.api.put_admin_knowledge_date(date_id=1, data=payload)
 
         self.asserts.status(response=response, expected_status=codes.OK)
-        self.use_case.update_date.assert_called_once_with(
-            date_id="0" * 31 + "1",
-            params=KnowledgeDateUpdateParams(
-                display_name="Годовщина",
-                date=KnowledgeDateValue(day=29, month=2, year=None),
-                description="",
-                tag_ids=["2" * 32],
-                person_ids=["3" * 32],
-            ),
-            author_username="test",
+        call = self.use_case.update_date.call_args
+        assert call.kwargs["date_id"] == "0" * 31 + "1"
+        assert call.kwargs["params"] == KnowledgeDateUpdateParams(
+            display_name="Годовщина",
+            date=KnowledgeDateValue(day=29, month=2, year=None),
+            description="",
+            tag_ids=["2" * 32],
+            person_ids=["3" * 32],
         )
+        assert call.kwargs["author_username"] == "test"
+        assert call.kwargs["current_datetime"].tzinfo is not None
 
         payload["personIds"] = ["3" * 32, "3" * 32]
         duplicate_response = self.api.put_admin_knowledge_date(date_id=1, data=payload)

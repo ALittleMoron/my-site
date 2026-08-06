@@ -11,8 +11,9 @@ def main() -> None:
     runtime = compose_agent_bridge_runtime(settings=settings, transport=None)
     if runtime.automatic_rotation is not None:
         asyncio.run(
-            runtime.automatic_rotation.rotate_if_needed(
+            runtime.automatic_rotation.use_case.rotate_if_needed(
                 current_datetime=datetime.now(UTC),
+                policy=runtime.automatic_rotation.policy,
             ),
         )
     runtime.server.server.run(transport="stdio")

@@ -48,6 +48,7 @@ from infra.postgresql.storages.knowledge.people import (
 from tests.test_cases import StorageTestCase
 
 BROAD_MATCH_COUNT = 33_000
+CURRENT_DATETIME = datetime(2026, 7, 30, 12, 0, tzinfo=UTC)
 
 
 def person_update(
@@ -167,6 +168,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
             await self.people_use_case.delete_person(
                 person_id=foreign.item.id,
                 author_username="admin",
+                current_datetime=CURRENT_DATETIME,
             )
 
     async def test_list_birthday_details_for_months_is_author_scoped(self) -> None:
@@ -192,6 +194,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                     birthday=PersonBirthday(day=1, month=month, year=None),
                 ),
                 author_username=author,
+                current_datetime=CURRENT_DATETIME,
             )
             created[first_name] = person.item.id
         without_birthday = await self.people_use_case.create_person(
@@ -239,6 +242,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                     tag_ids=tag_ids,
                 ),
                 author_username="admin",
+                current_datetime=CURRENT_DATETIME,
             )
             people.append(person)
         base_time = datetime(2026, 1, 1, tzinfo=UTC)
@@ -334,6 +338,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                     contacts=(email, phone, telegram),
                 ),
                 author_username="admin",
+                current_datetime=CURRENT_DATETIME,
             )
 
         page = await self.people_use_case.list_people(
@@ -433,6 +438,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                 forward_name="друг",
                 reverse_name="",
             ),
+            current_datetime=CURRENT_DATETIME,
         )
         source = await self.people_use_case.create_person(
             params=PersonQuickCreateParams(
@@ -468,6 +474,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                 ),
             ),
             author_username="admin",
+            current_datetime=CURRENT_DATETIME,
         )
 
         with pytest.raises(KnowledgeConflictError):
@@ -489,6 +496,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                 forward_name="руководитель",
                 reverse_name="подчинённый",
             ),
+            current_datetime=CURRENT_DATETIME,
         )
         symmetric = await self.relationship_types_use_case.create_relationship_type(
             params=PersonRelationshipTypeCreateParams(
@@ -497,6 +505,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                 forward_name="друг",
                 reverse_name="",
             ),
+            current_datetime=CURRENT_DATETIME,
         )
         source, first, second, removed = [
             await self.people_use_case.create_person(
@@ -533,6 +542,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                 ),
             ),
             author_username="admin",
+            current_datetime=CURRENT_DATETIME,
         )
         directional_edge = next(
             value for value in initial.relationships if value.relationship_type.id == directional.id
@@ -568,6 +578,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                 ),
             ),
             author_username="admin",
+            current_datetime=CURRENT_DATETIME,
         )
 
         assert {(value.related_person_id, value.label) for value in updated.relationships} == {
@@ -595,6 +606,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
         await self.people_use_case.delete_person(
             person_id=source.item.id,
             author_username="admin",
+            current_datetime=CURRENT_DATETIME,
         )
 
         assert (
@@ -631,6 +643,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                 forward_name="друг",
                 reverse_name="",
             ),
+            current_datetime=CURRENT_DATETIME,
         )
 
         with pytest.raises(PersonRelationshipNotFoundError):
@@ -653,6 +666,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
                     ),
                 ),
                 author_username="admin",
+                current_datetime=CURRENT_DATETIME,
             )
 
     async def test_private_file_metadata_is_author_scoped_and_cascades_with_person(
@@ -698,6 +712,7 @@ class TestKnowledgePeopleStorage(StorageTestCase):
         object_names = await self.people_use_case.delete_person(
             person_id=person.item.id,
             author_username="admin",
+            current_datetime=CURRENT_DATETIME,
         )
 
         assert object_names == ("attachments/private.txt",)

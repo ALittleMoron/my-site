@@ -2,6 +2,7 @@ from datetime import datetime
 
 from dishka.integrations.taskiq import FromDishka, inject
 
+from core.agent_access.schemas import AgentAuditPolicy
 from core.agent_access.use_cases import AgentAuditCleanupUseCase
 from entrypoints.taskiq.broker import broker
 from infra.config.constants import constants
@@ -21,5 +22,11 @@ from infra.config.settings import settings
 async def prune_expired_agent_audits(
     use_case: FromDishka[AgentAuditCleanupUseCase],
     current_datetime: FromDishka[datetime],
+    policy: FromDishka[AgentAuditPolicy],
 ) -> dict[str, int]:
-    return (await use_case.prune_expired_audits(current_datetime=current_datetime)).as_dict()
+    return (
+        await use_case.prune_expired_audits(
+            current_datetime=current_datetime,
+            policy=policy,
+        )
+    ).as_dict()

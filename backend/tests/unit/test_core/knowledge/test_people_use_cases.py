@@ -31,11 +31,12 @@ from core.knowledge.people.schemas import (
     PersonRelationshipChanges,
     PersonRelationshipCreateParams,
     PersonRelationshipType,
+    PersonRelationshipTypeUpdateParams,
     PersonRelationshipUpdateParams,
     PersonUpdateParams,
 )
 from core.knowledge.people.storages import PeopleStorage
-from core.knowledge.people.use_cases import PeopleUseCase
+from core.knowledge.people.use_cases import PeopleUseCase, PersonRelationshipTypesUseCase
 from tests.test_cases import TestCase
 
 CURRENT_DATETIME = datetime(2026, 7, 27, 12, 0, tzinfo=UTC)
@@ -347,11 +348,35 @@ class TestPeopleUseCase(TestCase):
             person_id=person_id,
             params=params,
             author_username="owner",
+            current_datetime=CURRENT_DATETIME,
         )
 
         touch_call = self.item_storage.touch_items.await_args
         assert touch_call.kwargs["item_ids"] == {old_related_id, new_related_id}
+        assert touch_call.kwargs["updated_at"] == CURRENT_DATETIME
         self.people_storage.update_relationships.assert_awaited_once()
+
+    async def test_delete_person_reuses_supplied_datetime_for_every_touched_item(self) -> None:
+        person_id = self.factory.core.hex_id(1)
+        related_person_id = self.factory.core.hex_id(2)
+        related_date_id = self.factory.core.hex_id(3)
+        self.item_service.get_item.return_value = knowledge_item(
+            item_id=person_id,
+            display_name="Иванов Иван",
+        )
+        self.people_storage.list_related_person_ids.return_value = {related_person_id}
+        self.dates_storage.list_date_ids_for_person.return_value = [related_date_id]
+
+        await self.use_case.delete_person(
+            person_id=person_id,
+            author_username="owner",
+            current_datetime=CURRENT_DATETIME,
+        )
+
+        assert self.item_storage.touch_items.await_count == 2
+        assert {
+            call.kwargs["updated_at"] for call in self.item_storage.touch_items.await_args_list
+        } == {CURRENT_DATETIME}
 
     async def test_validate_relationship_changes_rejects_self_link(self) -> None:
         person_id = self.factory.core.hex_id(1)
@@ -444,3 +469,32 @@ class TestPeopleUseCase(TestCase):
                 changes=changes,
                 author_username="owner",
             )
+
+
+class TestPersonRelationshipTypesUseCase(TestCase):
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        self.storage = Mock(spec=PeopleStorage)
+        self.use_case = PersonRelationshipTypesUseCase(storage=self.storage)
+
+    async def test_update_reuses_supplied_datetime_for_validation_and_storage(self) -> None:
+        relationship_type_id = self.factory.core.hex_id(1)
+        existing = relationship_type(relationship_type_id=relationship_type_id)
+        self.storage.get_relationship_type.return_value = existing
+        self.storage.update_relationship_type.return_value = existing
+
+        await self.use_case.update_relationship_type(
+            relationship_type_id=relationship_type_id,
+            params=PersonRelationshipTypeUpdateParams(
+                is_symmetric=False,
+                forward_name="руководитель",
+                reverse_name="подчинённый",
+            ),
+            author_username="owner",
+            current_datetime=CURRENT_DATETIME,
+        )
+
+        assert (
+            self.storage.update_relationship_type.await_args.kwargs["updated_at"]
+            == CURRENT_DATETIME
+        )

@@ -326,7 +326,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             item_id=10,
             question_en="What is PEP 8?",
         )
-        self.storage.get_queued_question_for_update.return_value = queued_question
+        self.storage.get_queued_question.return_value = queued_question
         self.storage.create_competency_matrix_item.return_value = created_item
 
         item = await self.use_case.create_item_from_queue(
@@ -338,8 +338,9 @@ class TestQuestionSuggestionsUseCase(TestCase):
         )
 
         assert item == created_item
-        self.storage.get_queued_question_for_update.assert_called_once_with(
-            question_id=self.factory.core.hex_id(7)
+        self.storage.get_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(7),
+            lock=True,
         )
         self.storage.create_competency_matrix_item.assert_called_once()
         created_item = self.storage.create_competency_matrix_item.call_args.kwargs["item"]
@@ -357,10 +358,10 @@ class TestQuestionSuggestionsUseCase(TestCase):
         )
         assert create_item_call_index < delete_queue_call_index
 
-    async def test_create_item_from_queue_does_not_delete_missing_queue_entry(self) -> None:
-        self.storage.get_queued_question_for_update.side_effect = (
-            QueuedCompetencyMatrixQuestionNotFoundError
-        )
+    async def test_create_item_from_queue_does_not_delete_missing_queue_entry(
+        self,
+    ) -> None:
+        self.storage.get_queued_question.side_effect = QueuedCompetencyMatrixQuestionNotFoundError
 
         with pytest.raises(QueuedCompetencyMatrixQuestionNotFoundError):
             await self.use_case.create_item_from_queue(
@@ -373,10 +374,14 @@ class TestQuestionSuggestionsUseCase(TestCase):
 
         self.storage.create_competency_matrix_item.assert_not_called()
         self.storage.delete_queued_question.assert_not_called()
+        self.storage.get_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(404),
+            lock=True,
+        )
 
     async def test_create_item_from_queue_rejects_active_agent_claim(self) -> None:
         current_datetime = datetime(2026, 7, 14, 12, 0, tzinfo=UTC)
-        self.storage.get_queued_question_for_update.return_value = (
+        self.storage.get_queued_question.return_value = (
             self.factory.core.queued_competency_matrix_question(
                 question_id=7,
                 claim=MatrixQuestionClaimSummary(
@@ -400,10 +405,14 @@ class TestQuestionSuggestionsUseCase(TestCase):
 
         self.storage.create_competency_matrix_item.assert_not_called()
         self.storage.delete_queued_question.assert_not_called()
+        self.storage.get_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(7),
+            lock=True,
+        )
 
     async def test_delete_queued_question_rejects_active_agent_claim(self) -> None:
         current_datetime = datetime(2026, 7, 14, 12, 0, tzinfo=UTC)
-        self.storage.get_queued_question_for_update.return_value = (
+        self.storage.get_queued_question.return_value = (
             self.factory.core.queued_competency_matrix_question(
                 question_id=7,
                 claim=MatrixQuestionClaimSummary(
@@ -423,6 +432,10 @@ class TestQuestionSuggestionsUseCase(TestCase):
             )
 
         self.storage.delete_queued_question.assert_not_called()
+        self.storage.get_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(7),
+            lock=True,
+        )
 
     async def test_release_agent_claim_deletes_locked_claim(self) -> None:
         claim = MatrixQuestionClaimSummary(
@@ -432,7 +445,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
             claimed_at=datetime(2026, 7, 14, 11, 0, tzinfo=UTC),
             expires_at=datetime(2026, 7, 14, 13, 0, tzinfo=UTC),
         )
-        self.storage.get_queued_question_for_update.return_value = (
+        self.storage.get_queued_question.return_value = (
             self.factory.core.queued_competency_matrix_question(question_id=7, claim=claim)
         )
 
@@ -441,3 +454,7 @@ class TestQuestionSuggestionsUseCase(TestCase):
         )
 
         self.storage.delete_question_claim.assert_called_once_with(claim_id=claim.id)
+        self.storage.get_queued_question.assert_called_once_with(
+            question_id=self.factory.core.hex_id(7),
+            lock=True,
+        )

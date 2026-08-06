@@ -1,6 +1,6 @@
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from sqlalchemy_dev_utils.types.datetime import UTCDateTime
 
 revision = "0011"
 down_revision = "0010"
@@ -9,7 +9,7 @@ depends_on = None
 
 article_tags = sa.table(
     "articles__tag_model",
-    sa.column("deleted_at", postgresql.TIMESTAMP(timezone=True)),
+    sa.column("deleted_at", UTCDateTime(timezone=True)),
 )
 
 
@@ -32,7 +32,7 @@ def downgrade() -> None:
     op.add_column(
         "articles__tag_model",
         sa.Column(
-            "deleted_at", postgresql.TIMESTAMP(timezone=True), autoincrement=False, nullable=True
+            "deleted_at", UTCDateTime(timezone=True), autoincrement=False, nullable=True
         ),
     )
     op.create_index(

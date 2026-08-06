@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import Mock
 
@@ -18,6 +19,8 @@ from core.resumes.schemas import (
 from core.resumes.storages import ResumesStorage
 from core.resumes.use_cases import ResumesUseCase
 from tests.test_cases import TestCase
+
+CURRENT_DATETIME = datetime(2026, 7, 30, 12, 0, tzinfo=UTC)
 
 
 class TestResumesUseCase(TestCase):
@@ -146,6 +149,7 @@ class TestResumesUseCase(TestCase):
             resume_id=self.factory.core.hex_id(1),
             params=params,
             author_username="original-author",
+            current_datetime=CURRENT_DATETIME,
         )
 
         assert result == expected
@@ -158,7 +162,7 @@ class TestResumesUseCase(TestCase):
         assert updated_resume.id == existing_resume.id
         assert updated_resume.author_username == "original-author"
         assert updated_resume.created_at == existing_resume.created_at
-        assert updated_resume.updated_at > existing_resume.updated_at
+        assert updated_resume.updated_at == CURRENT_DATETIME
         assert updated_resume.title == "Platform engineer"
         assert updated_resume.language == LanguageEnum.RU
         assert updated_resume.content == replacement_content

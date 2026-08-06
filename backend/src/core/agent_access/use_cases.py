@@ -103,13 +103,17 @@ class AutomaticAgentCredentialRotationUseCase:
     storage: LocalAgentCredentialRotationStorage
     client: AgentApiClient
     id_generator: HexUuidIdGenerator
-    policy: LocalAgentCredentialRotationPolicy
 
-    async def rotate_if_needed(self, *, current_datetime: datetime) -> bool:
+    async def rotate_if_needed(
+        self,
+        *,
+        current_datetime: datetime,
+        policy: LocalAgentCredentialRotationPolicy,
+    ) -> bool:
         pending = self.storage.load_pending_rotation()
         if pending is None:
             certificate_expires_at = self.storage.get_active_certificate_expires_at()
-            if not self.policy.rotation_is_due(
+            if not policy.rotation_is_due(
                 certificate_expires_at=certificate_expires_at,
                 current_datetime=current_datetime,
             ):
@@ -139,13 +143,12 @@ class AgentAdminUseCase:
     storage: AgentAdminStorage
     certificate_issuer: AgentCertificateIssuer
     id_generator: HexUuidIdGenerator
-    certificate_policy: AgentCertificatePolicy
-    audit_policy: AgentAuditPolicy
 
     async def register_client(
         self,
         *,
         params: AgentClientRegisterParams,
+        policy: AgentCertificatePolicy,
     ) -> AgentClientRegistrationResult:
         params.ensure_valid()
         if await self.storage.client_name_exists(normalized_name=params.normalized_name):
@@ -163,8 +166,7 @@ class AgentAdminUseCase:
                 agent_client_id=client.id,
                 csr_pem=params.csr_pem,
                 valid_from=params.registered_at,
-                expires_at=params.registered_at
-                + timedelta(seconds=self.certificate_policy.lifetime_seconds),
+                expires_at=params.registered_at + timedelta(seconds=policy.lifetime_seconds),
             ),
         )
         certificate = AgentCertificate(
@@ -206,9 +208,10 @@ class AgentAdminUseCase:
         *,
         params: AgentAuditEventPageParams,
         requested_at: datetime,
+        policy: AgentAuditPolicy,
     ) -> AgentAuditEventPage:
-        params.ensure_valid(maximum_page_size=self.audit_policy.page_size_max)
-        created_at_from = requested_at - timedelta(seconds=self.audit_policy.retention_seconds)
+        params.ensure_valid(maximum_page_size=policy.page_size_max)
+        created_at_from = requested_at - timedelta(seconds=policy.retention_seconds)
         if params.cursor is not None and params.cursor.created_at < created_at_from:
             return AgentAuditEventPage(events=(), next_cursor=None)
         events = await self.storage.list_audit_events(
@@ -233,15 +236,15 @@ class AgentAdminUseCase:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class AgentAuditCleanupUseCase:
     storage: AgentAuditStorage
-    policy: AgentAuditPolicy
 
     async def prune_expired_audits(
         self,
         *,
         current_datetime: datetime,
+        policy: AgentAuditPolicy,
     ) -> AgentAuditCleanupResult:
         deleted_count = await self.storage.prune_audit_events(
-            created_at_before=current_datetime - timedelta(seconds=self.policy.retention_seconds),
+            created_at_before=current_datetime - timedelta(seconds=policy.retention_seconds),
         )
         return AgentAuditCleanupResult(deleted_count=deleted_count)
 
@@ -290,13 +293,13 @@ class AgentCertificateRotationUseCase:
     storage: AgentCertificateRotationStorage
     certificate_issuer: AgentCertificateIssuer
     id_generator: HexUuidIdGenerator
-    policy: AgentCertificatePolicy
 
     async def rotate(
         self,
         *,
         identity: AgentIdentity,
         params: AgentCertificateRotationParams,
+        policy: AgentCertificatePolicy,
     ) -> AgentCertificateRotationResult:
         params.ensure_valid()
         client = await self.storage.get_client_for_rotation(
@@ -342,7 +345,7 @@ class AgentCertificateRotationUseCase:
             return result
         current_certificate.ensure_rotation_allowed(
             rotated_at=params.rotated_at,
-            rotation_window_seconds=self.policy.rotation_window_seconds,
+            rotation_window_seconds=policy.rotation_window_seconds,
         )
         pending_rotation = await self.storage.get_pending_certificate_rotation(
             current_certificate_id=current_certificate.id,
@@ -354,7 +357,7 @@ class AgentCertificateRotationUseCase:
                 agent_client_id=identity.agent_client_id,
                 csr_pem=params.csr_pem,
                 valid_from=params.rotated_at,
-                expires_at=params.rotated_at + timedelta(seconds=self.policy.lifetime_seconds),
+                expires_at=params.rotated_at + timedelta(seconds=policy.lifetime_seconds),
             ),
         )
         certificate = AgentCertificate(
@@ -376,7 +379,7 @@ class AgentCertificateRotationUseCase:
             csr_digest=csr_digest,
             created_at=params.rotated_at,
             normal_access_until=params.rotated_at
-            + timedelta(seconds=self.policy.normal_access_overlap_seconds),
+            + timedelta(seconds=policy.normal_access_overlap_seconds),
             confirmed_at=None,
         )
         await self.storage.create_certificate_rotation(
@@ -459,7 +462,6 @@ class MatrixAgentUseCase:
     storage: MatrixAgentStorage
     matrix_storage: CompetencyMatrixStorage
     id_generator: HexUuidIdGenerator
-    policy: MatrixAgentPolicy
 
     async def get_matrix_authoring_context(
         self,
@@ -468,14 +470,15 @@ class MatrixAgentUseCase:
         request_id: str,
         input_digest: str,
         requested_at: datetime,
+        policy: MatrixAgentPolicy,
     ) -> MatrixAuthoringContext:
         identity.ensure_scope(scope=AgentScopeEnum.MATRIX_CONTEXT_READ)
         context = MatrixAuthoringContext(
             structure=await self.matrix_storage.list_structure(),
             grades=tuple(GradeEnum),
             interview_frequencies=tuple(InterviewFrequencyEnum),
-            minimum_resource_count=self.policy.minimum_resource_count,
-            maximum_resource_count=self.policy.maximum_resource_count,
+            minimum_resource_count=policy.minimum_resource_count,
+            maximum_resource_count=policy.maximum_resource_count,
         )
         await self.storage.create_audit_event(
             params=AgentAuditEventCreateParams(
@@ -528,12 +531,13 @@ class MatrixAgentUseCase:
         identity: AgentIdentity,
         claimed_at: datetime,
         input_digest: str,
+        policy: MatrixAgentPolicy,
     ) -> MatrixQuestionClaim:
         identity.ensure_scope(scope=AgentScopeEnum.MATRIX_QUEUE_CLAIM)
         claim = await self.storage.claim_next_matrix_question(
             agent_client_id=identity.agent_client_id,
             claimed_at=claimed_at,
-            expires_at=claimed_at + timedelta(seconds=self.policy.claim_ttl_seconds),
+            expires_at=claimed_at + timedelta(seconds=policy.claim_ttl_seconds),
         )
         await self.storage.create_audit_event(
             params=AgentAuditEventCreateParams(
@@ -556,11 +560,12 @@ class MatrixAgentUseCase:
         identity: AgentIdentity,
         params: MatrixQuestionDraftSaveParams,
         completed_at: datetime,
+        policy: MatrixAgentPolicy,
     ) -> MatrixQuestionDraftSaveResult:
         identity.ensure_scope(scope=AgentScopeEnum.MATRIX_DRAFT_CREATE)
         params.ensure_valid(
-            minimum_resource_count=self.policy.minimum_resource_count,
-            maximum_resource_count=self.policy.maximum_resource_count,
+            minimum_resource_count=policy.minimum_resource_count,
+            maximum_resource_count=policy.maximum_resource_count,
         )
         canonical_input_digest = params.canonical_digest()
         completion = await self.storage.get_matrix_question_draft_completion(

@@ -1,7 +1,7 @@
 from dishka import Provider, Scope, alias, provide
 
 from core.agent_access.clients import AgentCertificateIssuer
-from core.agent_access.schemas import AgentCertificatePolicy, MatrixAgentPolicy
+from core.agent_access.schemas import MatrixAgentPolicy
 from core.agent_access.storages import (
     AgentAdminStorage,
     AgentAuditStorage,
@@ -17,20 +17,11 @@ from core.agent_access.use_cases import (
 )
 from core.competency_matrix.storages import CompetencyMatrixStorage
 from core.generators import HexUuidIdGenerator
+from infra.config.constants import constants
 from infra.postgresql.storages.agent_access import AgentAccessDatabaseStorage
 
 
 class AgentAccessProvider(Provider):
-    def __init__(
-        self,
-        *,
-        certificate_policy: AgentCertificatePolicy,
-        matrix_policy: MatrixAgentPolicy,
-    ) -> None:
-        super().__init__()
-        self.certificate_policy = certificate_policy
-        self.matrix_policy = matrix_policy
-
     agent_access_database_storage = provide(AgentAccessDatabaseStorage, scope=Scope.REQUEST)
     agent_admin_storage = alias(AgentAccessDatabaseStorage, provides=AgentAdminStorage)
     agent_audit_storage = alias(AgentAccessDatabaseStorage, provides=AgentAuditStorage)
@@ -43,6 +34,14 @@ class AgentAccessProvider(Provider):
     agent_identity_use_case = provide(AgentIdentityUseCase, scope=Scope.REQUEST)
     agent_audit_use_case = provide(AgentAuditUseCase, scope=Scope.REQUEST)
 
+    @provide(scope=Scope.APP)
+    def provide_matrix_agent_policy(self) -> MatrixAgentPolicy:
+        return MatrixAgentPolicy(
+            claim_ttl_seconds=constants.agent_access.claim_ttl_seconds,
+            minimum_resource_count=constants.agent_access.minimum_resource_count,
+            maximum_resource_count=constants.agent_access.maximum_resource_count,
+        )
+
     @provide(scope=Scope.REQUEST)
     def provide_agent_certificate_rotation_use_case(
         self,
@@ -54,7 +53,6 @@ class AgentAccessProvider(Provider):
             storage=storage,
             certificate_issuer=certificate_issuer,
             id_generator=id_generator,
-            policy=self.certificate_policy,
         )
 
     @provide(scope=Scope.REQUEST)
@@ -68,5 +66,4 @@ class AgentAccessProvider(Provider):
             storage=storage,
             matrix_storage=matrix_storage,
             id_generator=id_generator,
-            policy=self.matrix_policy,
         )

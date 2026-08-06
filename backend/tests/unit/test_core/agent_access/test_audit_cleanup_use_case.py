@@ -12,15 +12,16 @@ class TestAgentAuditCleanupUseCase(TestCase):
         current_datetime = datetime(2026, 7, 15, 12, 0, tzinfo=UTC)
         storage = Mock(spec=AgentAuditStorage)
         storage.prune_audit_events.return_value = 3
-        use_case = AgentAuditCleanupUseCase(
-            storage=storage,
-            policy=AgentAuditPolicy(
-                page_size_max=100,
-                retention_seconds=365 * 24 * 60 * 60,
-            ),
+        use_case = AgentAuditCleanupUseCase(storage=storage)
+        policy = AgentAuditPolicy(
+            page_size_max=100,
+            retention_seconds=365 * 24 * 60 * 60,
         )
 
-        result = await use_case.prune_expired_audits(current_datetime=current_datetime)
+        result = await use_case.prune_expired_audits(
+            current_datetime=current_datetime,
+            policy=policy,
+        )
 
         assert result == AgentAuditCleanupResult(deleted_count=3)
         assert result.as_dict() == {"deletedCount": 3}

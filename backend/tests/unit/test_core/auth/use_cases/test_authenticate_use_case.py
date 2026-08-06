@@ -14,7 +14,6 @@ from core.auth.schemas import (
     AuthAuthenticateParams,
     AuthSession,
     AuthSessionClientMetadata,
-    AuthUseCaseConfig,
 )
 from core.auth.storages import AuthSessionStorage, TokenRevocationStorage
 from core.auth.types import SessionSecretHash, Token
@@ -41,11 +40,6 @@ class TestLoginUseCase(ContainerTestCase):
             user_storage=self.user_storage,
             event_reporter=self.auth_event_reporter,
             auth_session_secret_generator=AuthSessionSecretGenerator(byte_count=32),
-            config=AuthUseCaseConfig(
-                access_token_expires_in_seconds=900,
-                session_expires_in_seconds=2_592_000,
-                session_absolute_expires_in_seconds=2_592_000,
-            ),
         )
 
     def _set_active_session(self, *, username: str = "test") -> None:

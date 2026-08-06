@@ -6,6 +6,7 @@ from core.agent_access.storages import AgentAdminStorage, AgentAuditStorage
 from core.agent_access.use_cases import AgentAdminUseCase, AgentAuditCleanupUseCase
 from core.generators import HexUuidIdGenerator
 from core.schemas import Secret
+from infra.config.constants import constants
 from infra.config.settings import AgentAccessSettings
 from infra.cryptography.agent_certificates import CryptographyAgentCertificateIssuer
 
@@ -15,13 +16,26 @@ class AgentAdminProvider(Provider):
         self,
         *,
         settings: AgentAccessSettings,
-        certificate_policy: AgentCertificatePolicy,
-        audit_policy: AgentAuditPolicy,
     ) -> None:
         super().__init__()
         self.settings = settings
-        self.certificate_policy = certificate_policy
-        self.audit_policy = audit_policy
+
+    @provide(scope=Scope.APP)
+    def provide_agent_certificate_policy(self) -> AgentCertificatePolicy:
+        return AgentCertificatePolicy(
+            lifetime_seconds=constants.agent_access.certificate_lifetime_seconds,
+            rotation_window_seconds=constants.agent_access.certificate_rotation_window_seconds,
+            normal_access_overlap_seconds=(
+                constants.agent_access.certificate_rotation_normal_access_overlap_seconds
+            ),
+        )
+
+    @provide(scope=Scope.APP)
+    def provide_agent_audit_policy(self) -> AgentAuditPolicy:
+        return AgentAuditPolicy(
+            page_size_max=constants.agent_access.audit_page_max_size,
+            retention_seconds=constants.agent_access.audit_retention_seconds,
+        )
 
     @provide(scope=Scope.APP)
     def provide_agent_certificate_issuer(self) -> AgentCertificateIssuer:
@@ -48,8 +62,6 @@ class AgentAdminProvider(Provider):
             storage=storage,
             certificate_issuer=certificate_issuer,
             id_generator=id_generator,
-            certificate_policy=self.certificate_policy,
-            audit_policy=self.audit_policy,
         )
 
     @provide(scope=Scope.REQUEST)
@@ -57,7 +69,4 @@ class AgentAdminProvider(Provider):
         self,
         storage: AgentAuditStorage,
     ) -> AgentAuditCleanupUseCase:
-        return AgentAuditCleanupUseCase(
-            storage=storage,
-            policy=self.audit_policy,
-        )
+        return AgentAuditCleanupUseCase(storage=storage)

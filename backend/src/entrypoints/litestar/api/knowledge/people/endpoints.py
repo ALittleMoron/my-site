@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka import FromDishka
@@ -143,12 +144,14 @@ class AdminPeopleApiController(Controller):
         ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[PeopleUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> PersonResponseSchema:
         return PersonResponseSchema.from_domain_schema(
             schema=await use_case.update_person(
                 person_id=person_id,
                 params=data.to_domain_schema(),
                 author_username=request.user.username,
+                current_datetime=current_datetime,
             ),
         )
 
@@ -158,17 +161,19 @@ class AdminPeopleApiController(Controller):
         name="admin-knowledge-people-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
-    async def delete_person(
+    async def delete_person(  # noqa: PLR0913
         self,
         person_id: PersonIdPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[PeopleUseCase],
         object_cleaner: FromDishka[KnowledgeFileObjectCleaner],
         post_commit_actions: FromDishka[PostCommitActions],
+        current_datetime: FromDishka[datetime],
     ) -> None:
         object_names = await use_case.delete_person(
             person_id=person_id,
             author_username=request.user.username,
+            current_datetime=current_datetime,
         )
         register_knowledge_object_cleanup(
             object_names=object_names,
@@ -217,10 +222,12 @@ class AdminPeopleApiController(Controller):
         ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[PersonRelationshipTypesUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> PersonRelationshipTypeResponseSchema:
         return PersonRelationshipTypeResponseSchema.from_domain_schema(
             schema=await use_case.create_relationship_type(
                 params=data.to_create_schema(author_username=request.user.username),
+                current_datetime=current_datetime,
             ),
         )
 
@@ -249,12 +256,14 @@ class AdminPeopleApiController(Controller):
         ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[PersonRelationshipTypesUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> PersonRelationshipTypeResponseSchema:
         return PersonRelationshipTypeResponseSchema.from_domain_schema(
             schema=await use_case.update_relationship_type(
                 relationship_type_id=relationship_type_id,
                 params=data.to_update_schema(),
                 author_username=request.user.username,
+                current_datetime=current_datetime,
             ),
         )
 

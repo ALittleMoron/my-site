@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 
 from core.resumes.exporters import ResumeDocumentExporter
 from core.resumes.schemas import (
@@ -45,14 +45,14 @@ class ResumesUseCase:
         resume_id: str,
         params: ResumeUpdateParams,
         author_username: str,
+        current_datetime: datetime,
     ) -> Resume:
         existing_resume = await self.storage.get_resume(
             resume_id=resume_id,
             author_username=author_username,
         )
-        now = datetime.now(tz=UTC)
         return await self.storage.update_resume(
-            resume=params.to_resume(existing_resume=existing_resume, now=now),
+            resume=params.to_resume(existing_resume=existing_resume, now=current_datetime),
         )
 
     async def delete_resume(self, *, resume_id: str, author_username: str) -> None:

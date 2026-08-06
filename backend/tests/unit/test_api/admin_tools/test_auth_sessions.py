@@ -7,6 +7,7 @@ from httpx import codes
 from core.auth.enums import RoleEnum
 from core.auth.schemas import (
     AuthSessionCleanupParams,
+    AuthSessionCleanupPolicy,
     AuthSessionCleanupResult,
     AuthSessionCleanupStatus,
     JwtUser,
@@ -41,6 +42,10 @@ class TestAdminToolsAuthSessionsAPI(ApiTestCase):
             "scheduledPruneIntervalSeconds": 86_400,
         }
         self.use_case.get_cleanup_status.assert_awaited_once_with(
+            policy=AuthSessionCleanupPolicy(
+                expiring_soon_days=7,
+                scheduled_prune_interval_seconds=86_400,
+            ),
             params=AuthSessionCleanupParams(current_datetime=CURRENT_DATETIME),
         )
 
@@ -64,6 +69,10 @@ class TestAdminToolsAuthSessionsAPI(ApiTestCase):
             "scheduledPruneIntervalSeconds": 86_400,
         }
         self.use_case.prune_expired_sessions.assert_awaited_once_with(
+            policy=AuthSessionCleanupPolicy(
+                expiring_soon_days=7,
+                scheduled_prune_interval_seconds=86_400,
+            ),
             params=AuthSessionCleanupParams(current_datetime=CURRENT_DATETIME),
         )
 

@@ -7,7 +7,7 @@ from litestar.datastructures import State
 from litestar.di import NamedDependency, Provide
 
 from core.articles.enums import ArticleViewSourceCategory
-from core.articles.schemas import ArticleFilters
+from core.articles.schemas import ArticleAnalyticsConfig, ArticleFilters
 from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.schemas import JwtUser
 from core.auth.types import Token
@@ -141,6 +141,7 @@ class PublicArticlesApiController(Controller):
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ArticlesUseCase],
         analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
+        config: FromDishka[ArticleAnalyticsConfig],
         _language: LanguageQuery,
     ) -> None:
         if request.user.can_manage_content:
@@ -149,6 +150,7 @@ class PublicArticlesApiController(Controller):
         await analytics_use_case.track_public_view(
             article=article,
             referrer=request.headers.get("referer"),
+            config=config,
         )
 
     @post(
@@ -189,12 +191,14 @@ class PublicArticlesApiController(Controller):
             ),
         ],
         analytics_use_case: FromDishka[ArticleAnalyticsUseCase],
+        config: FromDishka[ArticleAnalyticsConfig],
         _language: LanguageQuery,
     ) -> None:
         await analytics_use_case.set_reaction(
             slug=slug,
             client_token=data.client_token,
             reaction_kind=data.reaction_kind,
+            config=config,
         )
 
     @get(

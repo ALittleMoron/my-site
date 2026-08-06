@@ -146,6 +146,7 @@ class TestKnowledgeDatesUseCase(TestCase):
                 date=KnowledgeDateValue(day=1, month=5, year=2020),
                 author_username="owner",
             ),
+            today=CURRENT_DATETIME.date(),
         )
 
         assert created.item.id == date_id
@@ -180,6 +181,7 @@ class TestKnowledgeDatesUseCase(TestCase):
                     person_ids=[person_id],
                 ),
                 author_username="owner",
+                current_datetime=CURRENT_DATETIME,
             )
 
         self.item_service.update_item.assert_not_called()
@@ -220,6 +222,7 @@ class TestKnowledgeDatesUseCase(TestCase):
                 person_ids=[new_person_id],
             ),
             author_username="owner",
+            current_datetime=CURRENT_DATETIME,
         )
 
         self.dates_storage.replace_person_links.assert_awaited_once_with(
@@ -231,6 +234,7 @@ class TestKnowledgeDatesUseCase(TestCase):
             old_person_id,
             new_person_id,
         }
+        assert self.item_storage.touch_items.await_args.kwargs["updated_at"] == CURRENT_DATETIME
 
     async def test_delete_returns_private_objects_and_touches_people(self) -> None:
         date_id = self.factory.core.hex_id(1)
@@ -263,6 +267,7 @@ class TestKnowledgeDatesUseCase(TestCase):
         object_names = await self.use_case.delete_date(
             date_id=date_id,
             author_username="owner",
+            current_datetime=CURRENT_DATETIME,
         )
 
         assert object_names == ("attachments/file.txt",)
@@ -272,3 +277,4 @@ class TestKnowledgeDatesUseCase(TestCase):
             kind=KnowledgeItemKind.DATE,
         )
         assert self.item_storage.touch_items.await_args.kwargs["item_ids"] == {person_id}
+        assert self.item_storage.touch_items.await_args.kwargs["updated_at"] == CURRENT_DATETIME

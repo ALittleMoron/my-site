@@ -8,6 +8,7 @@ from core.auth.schemas import (
     AuthLoginResult,
     AuthSessionClientMetadata,
     AuthSessionCredentials,
+    AuthUseCaseConfig,
 )
 from core.auth.types import SessionSecret, Token
 from tests.test_cases import ApiTestCase
@@ -54,6 +55,11 @@ class TestLoginAPI(ApiTestCase):
         assert "Path=/api/auth" in set_cookie
         assert "Max-Age=2592000" in set_cookie
         self.use_case.login.assert_called_once_with(
+            config=AuthUseCaseConfig(
+                access_token_expires_in_seconds=900,
+                session_expires_in_seconds=2_592_000,
+                session_absolute_expires_in_seconds=2_592_000,
+            ),
             params=AuthLoginParams(
                 username="USERNAME",
                 password="PASSWORD",

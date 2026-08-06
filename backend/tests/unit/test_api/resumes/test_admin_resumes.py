@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime
 from typing import cast
 
 import pytest
@@ -207,15 +207,15 @@ class TestAdminResumesAPI(ApiTestCase):
         body = response.json()
         assert body["title"] == "Updated resume"
         assert body["language"] == "en"
-        self.use_case.update_resume.assert_called_once_with(
-            resume_id=self.factory.core.hex_id(3),
-            params=ResumeUpdateParams(
-                title="Updated resume",
-                language=LanguageEnum.EN,
-                content=content,
-            ),
-            author_username="test",
+        call = self.use_case.update_resume.call_args
+        assert call.kwargs["resume_id"] == self.factory.core.hex_id(3)
+        assert call.kwargs["params"] == ResumeUpdateParams(
+            title="Updated resume",
+            language=LanguageEnum.EN,
+            content=content,
         )
+        assert call.kwargs["author_username"] == "test"
+        assert isinstance(call.kwargs["current_datetime"], datetime)
 
     def test_create_resume_rejects_missing_language(self) -> None:
         data = self.factory.api.resume_request()

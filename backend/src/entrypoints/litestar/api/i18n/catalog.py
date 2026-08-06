@@ -966,11 +966,12 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.architecture.agentTitle": "Безопасный AI-доступ",
         "siteBuild.architecture.agentBody": (
-            "Семь Agent REST-операций смонтированы в основном Litestar-приложении без отдельного "
-            "процесса и Unix-сокета. Приватную границу сохраняет отдельный WireGuard-bound nginx "
-            "mTLS-listener с точным allowlist; публичный listener возвращает 404 для внутреннего "
-            "пути и удаляет поддельный certificate header. Локальный stdio MCP-мост открывает "
-            "ровно пять Draft-only операций без publish, generic CRUD, SQL, shell или URL fetch. "
+            "Ограниченный Agent REST-контур смонтирован в основном Litestar-приложении без "
+            "отдельного процесса и Unix-сокета. Приватную границу сохраняет отдельный "
+            "WireGuard-bound nginx mTLS-listener с точным allowlist; публичный listener возвращает "
+            "404 для внутреннего пути и удаляет поддельный certificate header. Локальный stdio "
+            "MCP-мост открывает ограниченный набор Draft-only операций без publish, generic CRUD, "
+            "SQL, shell или URL fetch. "
             "Упрощение осознанно оставляет общими с backend процесс, роль БД, секреты и "
             "доступность: "
             "изоляция private application network и доверие к nginx остаются частью boundary."
@@ -2471,12 +2472,12 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         ),
         "siteBuild.architecture.agentTitle": "Safe AI access",
         "siteBuild.architecture.agentBody": (
-            "Seven Agent REST operations are mounted in the main Litestar application without a "
+            "A bounded Agent REST surface is mounted in the main Litestar application without a "
             "separate process or Unix socket. A dedicated WireGuard-bound nginx mTLS listener "
             "preserves the private boundary with an exact allowlist; the public listener returns "
             "404 for the internal path and strips forged certificate headers. A local stdio MCP "
-            "bridge exposes exactly five Draft-only operations with no publish, generic CRUD, "
-            "SQL, shell, or URL fetch. The simplification intentionally shares the backend "
+            "bridge exposes an allowlisted Draft-only authoring surface with no publish, generic "
+            "CRUD, SQL, shell, or URL fetch. The simplification intentionally shares the backend "
             "process, DB role, secrets, and availability: private application-network isolation "
             "and trust in nginx remain part of the boundary."
         ),

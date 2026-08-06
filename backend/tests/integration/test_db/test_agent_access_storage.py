@@ -43,6 +43,7 @@ from core.competency_matrix.exceptions import (
     CompetencyMatrixItemNotFoundError,
     CompetencyMatrixStructureNotFoundError,
 )
+from core.competency_matrix.schemas import QueuedCompetencyMatrixQuestion
 from core.enums import PublishStatusEnum
 from core.generators import HexUuidIdGenerator
 from infra.postgresql.models import (
@@ -61,6 +62,11 @@ from tests.test_cases import StorageTestCase
 NOW = datetime(2026, 7, 14, 12, 0, tzinfo=UTC)
 FINGERPRINT = "a" * 64
 INPUT_DIGEST = "b" * 64
+MATRIX_POLICY = MatrixAgentPolicy(
+    claim_ttl_seconds=7200,
+    minimum_resource_count=1,
+    maximum_resource_count=3,
+)
 
 
 class TestAgentAccessDatabaseStorage(StorageTestCase):
@@ -140,6 +146,70 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
             == 1
         )
 
+    async def test_get_queued_question_returns_current_agent_claim_without_lock(self) -> None:
+        client = await self._create_client(client_id=13, name="claim-summary-agent")
+        question = self.factory.core.queued_competency_matrix_question(
+            question_id=14,
+            created_at=NOW,
+        )
+        await self.storage_helper.create_queued_matrix_questions(questions=[question])
+        claim = await self._claim(client=client, claimed_at=NOW)
+        matrix_storage = CompetencyMatrixDatabaseStorage(session=self.db_session)
+
+        loaded = await matrix_storage.get_queued_question(question_id=question.id, lock=False)
+
+        assert loaded.id == question.id
+        assert loaded.claim is not None
+        assert loaded.claim.id == claim.id
+        assert loaded.claim.agent_client_id == client.id
+        assert loaded.claim.agent_client_name == client.name
+
+    async def test_locked_queued_question_read_returns_claim_committed_by_prior_locker(
+        self,
+        session_maker: async_sessionmaker[AsyncSession],
+    ) -> None:
+        client = await self._create_client(client_id=15, name="prior-locker-agent")
+        question = self.factory.core.queued_competency_matrix_question(
+            question_id=16,
+            created_at=NOW,
+        )
+        await self.storage_helper.create_queued_matrix_questions(questions=[question])
+        await self.db_session.commit()
+        agent_claim_created = asyncio.Event()
+        human_lock_started = asyncio.Event()
+
+        async def claim_while_holding_queue_lock() -> MatrixQuestionClaim:
+            async with session_maker.begin() as session:
+                claim = await AgentAccessDatabaseStorage(
+                    session=session,
+                ).claim_next_matrix_question(
+                    agent_client_id=client.id,
+                    claimed_at=NOW,
+                    expires_at=NOW + timedelta(hours=2),
+                )
+                agent_claim_created.set()
+                await human_lock_started.wait()
+                await asyncio.sleep(0.05)
+                return claim
+
+        async def read_after_agent_queue_lock() -> QueuedCompetencyMatrixQuestion:
+            await agent_claim_created.wait()
+            async with session_maker.begin() as session:
+                human_lock_started.set()
+                return await CompetencyMatrixDatabaseStorage(
+                    session=session,
+                ).get_queued_question(question_id=question.id, lock=True)
+
+        claim, loaded = await asyncio.wait_for(
+            asyncio.gather(claim_while_holding_queue_lock(), read_after_agent_queue_lock()),
+            timeout=5,
+        )
+
+        assert loaded.claim is not None
+        assert loaded.claim.id == claim.id
+        assert loaded.claim.agent_client_id == client.id
+        assert loaded.claim.agent_client_name == client.name
+
     async def test_parallel_clients_cannot_claim_the_same_question(
         self,
         session_maker: async_sessionmaker[AsyncSession],
@@ -216,7 +286,7 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
         async def human_cleanup() -> None:
             async with session_maker.begin() as session:
                 storage = CompetencyMatrixDatabaseStorage(session=session)
-                await storage.get_queued_question_for_update(question.id)
+                await storage.get_queued_question(question_id=question.id, lock=True)
                 human_has_queue_lock.set()
                 await agent_started.wait()
                 await asyncio.sleep(0.05)
@@ -261,7 +331,7 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
         async def human_release() -> None:
             async with session_maker.begin() as session:
                 storage = CompetencyMatrixDatabaseStorage(session=session)
-                await storage.get_queued_question_for_update(question.id)
+                await storage.get_queued_question(question_id=question.id, lock=True)
                 human_has_queue_lock.set()
                 await agent_started.wait()
                 await asyncio.sleep(0.05)
@@ -339,6 +409,7 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
             identity=self._identity(client=client, certificate=certificate),
             params=params,
             completed_at=NOW + timedelta(minutes=30),
+            policy=MATRIX_POLICY,
         )
 
         item = await self.db_session.get(CompetencyMatrixItemModel, result.item_id)
@@ -366,18 +437,21 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
             identity=identity,
             params=params,
             completed_at=NOW + timedelta(minutes=30),
+            policy=MATRIX_POLICY,
         )
 
         replayed = await use_case.save_matrix_question_draft(
             identity=identity,
             params=params,
             completed_at=NOW + timedelta(minutes=31),
+            policy=MATRIX_POLICY,
         )
         with pytest.raises(AgentIdempotencyConflictError):
             await use_case.save_matrix_question_draft(
                 identity=identity,
                 params=replace(params, answer_en="A changed answer"),
                 completed_at=NOW + timedelta(minutes=32),
+                policy=MATRIX_POLICY,
             )
 
         assert replayed == MatrixQuestionDraftSaveResult(item_id=first.item_id, replayed=True)
@@ -412,6 +486,7 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
                     identity=identity,
                     params=params,
                     completed_at=NOW + timedelta(minutes=30),
+                    policy=MATRIX_POLICY,
                 )
 
         first, second = await asyncio.gather(
@@ -443,6 +518,7 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
                     identity=identity,
                     params=params,
                     completed_at=NOW + timedelta(minutes=30),
+                    policy=MATRIX_POLICY,
                 )
 
         async with session_maker() as session:
@@ -470,6 +546,7 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
                 identity=self._identity(client=client, certificate=certificate),
                 params=replace(params, subsection_id=self.factory.core.hex_id(999)),
                 completed_at=NOW + timedelta(minutes=30),
+                policy=MATRIX_POLICY,
             )
 
         assert await self.db_session.get(QueuedQuestionModel, claim.question.id) is not None
@@ -498,6 +575,7 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
                 identity=self._identity(client=client, certificate=certificate),
                 params=missing_resource_params,
                 completed_at=NOW + timedelta(minutes=30),
+                policy=MATRIX_POLICY,
             )
 
         assert await self.db_session.get(QueuedQuestionModel, claim.question.id) is not None
@@ -785,11 +863,6 @@ class TestAgentAccessDatabaseStorage(StorageTestCase):
                 session=storage.session,
             ),
             id_generator=HexUuidIdGenerator(generator=lambda: next(ids)),
-            policy=MatrixAgentPolicy(
-                claim_ttl_seconds=7200,
-                minimum_resource_count=1,
-                maximum_resource_count=3,
-            ),
         )
 
     def _client(self, *, client_id: int, name: str = "desktop-codex") -> AgentClient:

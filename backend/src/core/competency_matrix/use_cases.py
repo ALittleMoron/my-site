@@ -211,8 +211,9 @@ class CompetencyMatrixUseCase:
         params: QueuedCompetencyMatrixQuestionCreateItemParams,
         current_datetime: datetime,
     ) -> CompetencyMatrixItem:
-        queued_question = await self.storage.get_queued_question_for_update(
+        queued_question = await self.storage.get_queued_question(
             question_id=params.queued_question_id,
+            lock=True,
         )
         if queued_question.claim is not None and queued_question.claim.is_active(
             current_datetime=current_datetime,
@@ -346,8 +347,9 @@ class CompetencyMatrixUseCase:
         question_id: str,
         current_datetime: datetime,
     ) -> None:
-        queued_question = await self.storage.get_queued_question_for_update(
+        queued_question = await self.storage.get_queued_question(
             question_id=question_id,
+            lock=True,
         )
         if queued_question.claim is not None and queued_question.claim.is_active(
             current_datetime=current_datetime,
@@ -356,8 +358,9 @@ class CompetencyMatrixUseCase:
         await self.storage.delete_queued_question(question_id=question_id)
 
     async def release_queued_question_agent_claim(self, *, question_id: str) -> None:
-        queued_question = await self.storage.get_queued_question_for_update(
+        queued_question = await self.storage.get_queued_question(
             question_id=question_id,
+            lock=True,
         )
         if queued_question.claim is not None:
             await self.storage.delete_question_claim(claim_id=queued_question.claim.id)

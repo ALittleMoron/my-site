@@ -1,5 +1,5 @@
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import date, datetime
 
 from core.knowledge.dates.schemas import (
     KnowledgeDate,
@@ -137,8 +137,8 @@ class KnowledgeDatesUseCase:
             attachments=[file for file in files if file.kind == KnowledgeFileKind.ATTACHMENT],
         )
 
-    async def create_date(self, *, params: KnowledgeDateCreateParams) -> KnowledgeDate:
-        params.date.validate(today=datetime.now(tz=UTC).date())
+    async def create_date(self, *, params: KnowledgeDateCreateParams, today: date) -> KnowledgeDate:
+        params.date.validate(today=today)
         item = await self.item_service.create_item(
             params=KnowledgeItemCreateParams(
                 kind=KnowledgeItemKind.DATE,
@@ -159,8 +159,9 @@ class KnowledgeDatesUseCase:
         date_id: str,
         params: KnowledgeDateUpdateParams,
         author_username: str,
+        current_datetime: datetime,
     ) -> KnowledgeDate:
-        params.date.validate(today=datetime.now(tz=UTC).date())
+        params.date.validate(today=current_datetime.date())
         item = await self.item_service.get_item(
             item_id=date_id,
             author_username=author_username,
@@ -181,7 +182,6 @@ class KnowledgeDatesUseCase:
         )
         if len(people) != len(set(params.person_ids)):
             raise PersonNotFoundError
-        now = datetime.now(tz=UTC)
         await self.item_service.update_item(
             item=item,
             params=KnowledgeItemUpdateParams(
@@ -189,7 +189,7 @@ class KnowledgeDatesUseCase:
                 description=params.description,
             ),
             tag_ids=params.tag_ids,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         await self.dates_storage.update_details(
             details=KnowledgeDateDetails(item_id=date_id, date=params.date),
@@ -204,7 +204,7 @@ class KnowledgeDatesUseCase:
             item_ids={link.person_id for link in existing_links} | set(params.person_ids),
             author_username=author_username,
             kind=KnowledgeItemKind.PERSON,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         return await self.get_date(date_id=date_id, author_username=author_username)
 
@@ -213,6 +213,7 @@ class KnowledgeDatesUseCase:
         *,
         date_id: str,
         author_username: str,
+        current_datetime: datetime,
     ) -> tuple[str, ...]:
         await self.item_service.get_item(
             item_id=date_id,
@@ -236,7 +237,7 @@ class KnowledgeDatesUseCase:
             item_ids={link.person_id for link in links},
             author_username=author_username,
             kind=KnowledgeItemKind.PERSON,
-            updated_at=datetime.now(tz=UTC),
+            updated_at=current_datetime,
         )
         return tuple(file.relative_path for file in files)
 

@@ -4,8 +4,9 @@ from dishka import FromDishka
 from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, get, post, status_codes
 
-from core.auth.schemas import AuthSessionCleanupParams
+from core.auth.schemas import AuthSessionCleanupParams, AuthSessionCleanupPolicy
 from core.auth.use_cases import AuthSessionCleanupUseCase
+from core.cache_tools.schemas import CacheToolsPolicy
 from core.cache_tools.use_cases import CacheToolsUseCase
 from entrypoints.litestar.api.admin_tools.dependencies import CacheWarmOperationIdPath
 from entrypoints.litestar.api.admin_tools.schemas import (
@@ -33,8 +34,10 @@ class AdminToolsApiController(Controller):
         self,
         current_datetime: FromDishka[datetime],
         use_case: FromDishka[AuthSessionCleanupUseCase],
+        policy: FromDishka[AuthSessionCleanupPolicy],
     ) -> AuthSessionsStatusResponseSchema:
         status = await use_case.get_cleanup_status(
+            policy=policy,
             params=AuthSessionCleanupParams(current_datetime=current_datetime),
         )
         return AuthSessionsStatusResponseSchema.from_domain_schema(schema=status)
@@ -50,8 +53,10 @@ class AdminToolsApiController(Controller):
         self,
         current_datetime: FromDishka[datetime],
         use_case: FromDishka[AuthSessionCleanupUseCase],
+        policy: FromDishka[AuthSessionCleanupPolicy],
     ) -> AuthSessionsPruneResponseSchema:
         result = await use_case.prune_expired_sessions(
+            policy=policy,
             params=AuthSessionCleanupParams(current_datetime=current_datetime),
         )
         return AuthSessionsPruneResponseSchema.from_domain_schema(schema=result)
@@ -66,9 +71,10 @@ class AdminToolsApiController(Controller):
     async def get_cache_status(
         self,
         use_case: FromDishka[CacheToolsUseCase],
+        policy: FromDishka[CacheToolsPolicy],
     ) -> CacheStatusResponseSchema:
         return CacheStatusResponseSchema.from_domain_schema(
-            schema=await use_case.get_status(),
+            schema=await use_case.get_status(policy=policy),
         )
 
     @post(
@@ -81,9 +87,10 @@ class AdminToolsApiController(Controller):
     async def clear_cache(
         self,
         use_case: FromDishka[CacheToolsUseCase],
+        policy: FromDishka[CacheToolsPolicy],
     ) -> CacheStatusResponseSchema:
         return CacheStatusResponseSchema.from_domain_schema(
-            schema=await use_case.clear(),
+            schema=await use_case.clear(policy=policy),
         )
 
     @post(

@@ -5,6 +5,7 @@ from valkey.asyncio import Valkey
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
 from core.competency_matrix.parsers import QuestionQueueImportParser
 from core.competency_matrix.readers import QuestionQueueImportExcelReader
+from core.competency_matrix.schemas import QuestionSuggestionLimiterConfig
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import CompetencyMatrixStorage, QuestionSuggestionQuotaStorage
 from core.competency_matrix.use_cases import CompetencyMatrixUseCase
@@ -65,9 +66,11 @@ class CompetencyMatrixProvider(Provider):
     ) -> QuestionSuggestionLimiter:
         return QuestionSuggestionLimiter(
             quota_storage=quota_storage,
-            quota_secret=settings.app.secret_key.to_domain_secret(),
-            anonymous_daily_limit=(
-                settings.competency_matrix.question_suggestion_anonymous_daily_limit
+            config=QuestionSuggestionLimiterConfig(
+                quota_secret=settings.app.secret_key.to_domain_secret(),
+                anonymous_daily_limit=(
+                    settings.competency_matrix.question_suggestion_anonymous_daily_limit
+                ),
             ),
         )
 

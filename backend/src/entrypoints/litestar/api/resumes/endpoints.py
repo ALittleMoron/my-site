@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka import FromDishka
@@ -149,11 +150,13 @@ class AdminResumesApiController(Controller):
         ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[ResumesUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> ResumeResponseSchema:
         resume = await use_case.update_resume(
             resume_id=resume_id,
             params=data.to_update_schema(),
             author_username=request.user.username,
+            current_datetime=current_datetime,
         )
         return ResumeResponseSchema.from_domain_schema(schema=resume)
 

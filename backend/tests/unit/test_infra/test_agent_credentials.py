@@ -35,6 +35,9 @@ from infra.cryptography.agent_credentials import (
 NOW = datetime(2026, 7, 15, 12, 0, tzinfo=UTC)
 INITIAL_ID = "1" * 32
 ROTATION_ID = "2" * 32
+LOCAL_ROTATION_POLICY = LocalAgentCredentialRotationPolicy(
+    rotation_window_seconds=14 * 24 * 60 * 60,
+)
 
 
 @dataclass(slots=True)
@@ -221,7 +224,10 @@ async def test_pending_rotation_is_durable_before_the_network_call(tmp_path: Pat
     remote.before_start = assert_pending_first
     coordinator = _coordinator(store=store, remote=remote)
 
-    assert await coordinator.rotate_if_needed(current_datetime=NOW) is True
+    assert (
+        await coordinator.rotate_if_needed(current_datetime=NOW, policy=LOCAL_ROTATION_POLICY)
+        is True
+    )
 
 
 @pytest.mark.asyncio
@@ -234,7 +240,10 @@ async def test_certificate_outside_rotation_window_is_a_noop(tmp_path: Path) -> 
     remote = _remote(ca_key=ca_key, ca_certificate=ca_certificate)
 
     assert (
-        await _coordinator(store=store, remote=remote).rotate_if_needed(current_datetime=NOW)
+        await _coordinator(store=store, remote=remote).rotate_if_needed(
+            current_datetime=NOW,
+            policy=LOCAL_ROTATION_POLICY,
+        )
         is False
     )
     assert remote.start_requests == []
@@ -253,11 +262,14 @@ async def test_lost_start_response_reuses_the_pending_id_key_and_csr(tmp_path: P
     coordinator = _coordinator(store=store, remote=remote)
 
     with pytest.raises(AgentApiClientError):
-        await coordinator.rotate_if_needed(current_datetime=NOW)
+        await coordinator.rotate_if_needed(current_datetime=NOW, policy=LOCAL_ROTATION_POLICY)
     pending_before = (root / "pending.json").read_bytes()
     key_before = (root / "versions" / ROTATION_ID / "private-key.pem").read_bytes()
 
-    assert await coordinator.rotate_if_needed(current_datetime=NOW) is True
+    assert (
+        await coordinator.rotate_if_needed(current_datetime=NOW, policy=LOCAL_ROTATION_POLICY)
+        is True
+    )
     assert len(remote.start_requests) == 2
     assert remote.start_requests[0] == remote.start_requests[1]
     assert key_before not in pending_before
@@ -290,10 +302,13 @@ async def test_crash_before_symlink_switch_resumes_without_a_second_start(
     coordinator = _coordinator(store=store, remote=remote)
 
     with pytest.raises(AgentCredentialStoreError):
-        await coordinator.rotate_if_needed(current_datetime=NOW)
+        await coordinator.rotate_if_needed(current_datetime=NOW, policy=LOCAL_ROTATION_POLICY)
     assert (root / "current").readlink() == Path("versions") / INITIAL_ID
 
-    assert await coordinator.rotate_if_needed(current_datetime=NOW) is True
+    assert (
+        await coordinator.rotate_if_needed(current_datetime=NOW, policy=LOCAL_ROTATION_POLICY)
+        is True
+    )
     assert len(remote.start_requests) == 1
     assert (root / "current").readlink() == Path("versions") / ROTATION_ID
 
@@ -317,7 +332,7 @@ async def test_restart_recovers_stale_atomic_switch_symlink(tmp_path: Path) -> N
         await _coordinator(
             store=_desktop_store(root=root),
             remote=remote,
-        ).rotate_if_needed(current_datetime=NOW)
+        ).rotate_if_needed(current_datetime=NOW, policy=LOCAL_ROTATION_POLICY)
         is True
     )
     assert (root / "current").readlink() == Path("versions") / ROTATION_ID
@@ -336,7 +351,7 @@ async def test_lost_confirm_response_retries_with_the_new_pair(tmp_path: Path) -
     coordinator = _coordinator(store=store, remote=remote)
 
     with pytest.raises(AgentApiClientError):
-        await coordinator.rotate_if_needed(current_datetime=NOW)
+        await coordinator.rotate_if_needed(current_datetime=NOW, policy=LOCAL_ROTATION_POLICY)
     assert (root / "current").readlink() == Path("versions") / ROTATION_ID
     assert (root / "versions" / INITIAL_ID).exists()
     assert (root / "pending.json").exists()
@@ -346,7 +361,13 @@ async def test_lost_confirm_response_retries_with_the_new_pair(tmp_path: Path) -
         remote=remote,
     )
 
-    assert await restarted_coordinator.rotate_if_needed(current_datetime=NOW) is True
+    assert (
+        await restarted_coordinator.rotate_if_needed(
+            current_datetime=NOW,
+            policy=LOCAL_ROTATION_POLICY,
+        )
+        is True
+    )
     assert len(remote.start_requests) == 1
     assert remote.confirm_ids == [ROTATION_ID, ROTATION_ID]
     assert _desktop_store(root=root).active_pair().private_key_file.parent.name == ROTATION_ID
@@ -416,7 +437,10 @@ async def test_replacement_certificate_mismatches_fail_closed(
     )
 
     with pytest.raises(AgentCredentialCertificateValidationError) as exc_info:
-        await _coordinator(store=store, remote=remote).rotate_if_needed(current_datetime=NOW)
+        await _coordinator(store=store, remote=remote).rotate_if_needed(
+            current_datetime=NOW,
+            policy=LOCAL_ROTATION_POLICY,
+        )
 
     assert str(exc_info.value) == "agent certificate validation failed"
     assert exc_info.value.__cause__ is None
@@ -443,9 +467,6 @@ def _coordinator(
         storage=store,
         client=cast("AgentApiClient", remote),
         id_generator=HexUuidIdGenerator(lambda: ROTATION_ID),
-        policy=LocalAgentCredentialRotationPolicy(
-            rotation_window_seconds=14 * 24 * 60 * 60,
-        ),
     )
 
 

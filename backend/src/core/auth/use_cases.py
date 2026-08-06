@@ -46,9 +46,13 @@ class AuthUseCase:
     user_storage: UserAccountStorage
     event_reporter: AuthEventReporter
     auth_session_secret_generator: AuthSessionSecretGenerator
-    config: AuthUseCaseConfig
 
-    async def login(self, *, params: AuthLoginParams) -> AuthLoginResult:
+    async def login(
+        self,
+        *,
+        config: AuthUseCaseConfig,
+        params: AuthLoginParams,
+    ) -> AuthLoginResult:
         try:
             user = await self.user_storage.get_user_by_username(username=params.username)
         except UserNotFoundError as exc:
@@ -77,10 +81,10 @@ class AuthUseCase:
             )
         session_secret = self.auth_session_secret_generator.generate_secret()
         session_absolute_expires_at = params.current_datetime + timedelta(
-            seconds=self.config.session_absolute_expires_in_seconds,
+            seconds=config.session_absolute_expires_in_seconds,
         )
         session_expires_at = min(
-            params.current_datetime + timedelta(seconds=self.config.session_expires_in_seconds),
+            params.current_datetime + timedelta(seconds=config.session_expires_in_seconds),
             session_absolute_expires_at,
         )
         session = await self.auth_session_storage.create_session(
@@ -98,6 +102,7 @@ class AuthUseCase:
         return AuthLoginResult(
             access_token=self._issue_access_token(
                 payload=AccessTokenPayload(username=user.username, session_id=session.id),
+                expires_in_seconds=config.access_token_expires_in_seconds,
             ),
             session=AuthSessionCredentials(
                 secret=session_secret,
@@ -141,6 +146,7 @@ class AuthUseCase:
     async def refresh_access_token(
         self,
         *,
+        config: AuthUseCaseConfig,
         params: AuthRefreshAccessTokenParams,
     ) -> AuthRefreshAccessTokenResult:
         try:
@@ -169,7 +175,7 @@ class AuthUseCase:
             raise UnauthorizedError
         new_session_expires_at = session.refreshed_expires_at(
             now=params.current_datetime,
-            idle_expires_in_seconds=self.config.session_expires_in_seconds,
+            idle_expires_in_seconds=config.session_expires_in_seconds,
         )
         try:
             await self.auth_session_storage.extend_session_expiry(
@@ -182,6 +188,7 @@ class AuthUseCase:
         return AuthRefreshAccessTokenResult(
             access_token=self._issue_access_token(
                 payload=AccessTokenPayload(username=user.username, session_id=session.id),
+                expires_in_seconds=config.access_token_expires_in_seconds,
             ),
             session=AuthSessionCredentials(
                 secret=params.session_secret,
@@ -212,7 +219,12 @@ class AuthUseCase:
             expires_in_seconds=remaining_seconds,
         )
 
-    def _issue_access_token(self, *, payload: AccessTokenPayload) -> AccessTokenResult:
+    def _issue_access_token(
+        self,
+        *,
+        payload: AccessTokenPayload,
+        expires_in_seconds: int,
+    ) -> AccessTokenResult:
         token = Token(
             self.token_handler.encode_token(
                 payload=payload,
@@ -220,35 +232,35 @@ class AuthUseCase:
         )
         return AccessTokenResult(
             token=token,
-            expires_in_seconds=self.config.access_token_expires_in_seconds,
+            expires_in_seconds=expires_in_seconds,
         )
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
 class AuthSessionCleanupUseCase:
     auth_session_storage: AuthSessionStorage
-    policy: AuthSessionCleanupPolicy
 
     async def get_cleanup_status(
         self,
         *,
+        policy: AuthSessionCleanupPolicy,
         params: AuthSessionCleanupParams,
     ) -> AuthSessionCleanupStatus:
         counts = await self.auth_session_storage.count_cleanup_sessions(
             expired_at=params.current_datetime,
-            expiring_soon_at=params.current_datetime
-            + timedelta(days=self.policy.expiring_soon_days),
+            expiring_soon_at=params.current_datetime + timedelta(days=policy.expiring_soon_days),
         )
         return AuthSessionCleanupStatus(
             expired_count=counts.expired_count,
             expiring_soon_count=counts.expiring_soon_count,
-            expiring_soon_days=self.policy.expiring_soon_days,
-            scheduled_prune_interval_seconds=self.policy.scheduled_prune_interval_seconds,
+            expiring_soon_days=policy.expiring_soon_days,
+            scheduled_prune_interval_seconds=policy.scheduled_prune_interval_seconds,
         )
 
     async def prune_expired_sessions(
         self,
         *,
+        policy: AuthSessionCleanupPolicy,
         params: AuthSessionCleanupParams,
     ) -> AuthSessionCleanupResult:
         deleted_count = await self.auth_session_storage.delete_expired_sessions(
@@ -256,13 +268,12 @@ class AuthSessionCleanupUseCase:
         )
         counts = await self.auth_session_storage.count_cleanup_sessions(
             expired_at=params.current_datetime,
-            expiring_soon_at=params.current_datetime
-            + timedelta(days=self.policy.expiring_soon_days),
+            expiring_soon_at=params.current_datetime + timedelta(days=policy.expiring_soon_days),
         )
         return AuthSessionCleanupResult(
             deleted_count=deleted_count,
             expired_count=counts.expired_count,
             expiring_soon_count=counts.expiring_soon_count,
-            expiring_soon_days=self.policy.expiring_soon_days,
-            scheduled_prune_interval_seconds=self.policy.scheduled_prune_interval_seconds,
+            expiring_soon_days=policy.expiring_soon_days,
+            scheduled_prune_interval_seconds=policy.scheduled_prune_interval_seconds,
         )

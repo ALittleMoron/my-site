@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 
 from core.knowledge.exceptions import (
     InvalidKnowledgeDataError,
@@ -51,6 +51,7 @@ class KnowledgeTagsUseCase:
         tag_id: str,
         params: KnowledgeTagUpdateParams,
         author_username: str,
+        current_datetime: datetime,
     ) -> KnowledgeTag:
         tag = await self.storage.get_tag(tag_id=tag_id, author_username=author_username)
         name = params.name.strip()
@@ -65,7 +66,7 @@ class KnowledgeTagsUseCase:
         return await self.storage.update_tag(
             tag=tag,
             name=name,
-            updated_at=datetime.now(tz=UTC),
+            updated_at=current_datetime,
         )
 
     async def delete_tag(self, *, tag_id: str, author_username: str) -> None:

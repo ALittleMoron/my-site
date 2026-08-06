@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 
 from core.knowledge.exceptions import (
     InvalidKnowledgeDataError,
@@ -31,6 +31,7 @@ class KnowledgeFilesUseCase:
         *,
         params: KnowledgeFileUploadParams,
         rollback_registrar: KnowledgeFileRollbackRegistrar,
+        current_datetime: datetime,
     ) -> KnowledgeFile:
         item = await self.item_storage.get_item_for_author(
             item_id=params.item_id,
@@ -38,17 +39,16 @@ class KnowledgeFilesUseCase:
         )
         if params.kind != KnowledgeFileKind.ATTACHMENT:
             raise InvalidKnowledgeDataError
-        now = datetime.now(tz=UTC)
         file = await self.file_service.create_file(
             params=params,
-            now=now,
+            now=current_datetime,
             rollback_registrar=rollback_registrar,
         )
         await self.item_storage.touch_items(
             item_ids={item.id},
             author_username=item.author_username,
             kind=item.kind,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         return file
 
@@ -57,6 +57,7 @@ class KnowledgeFilesUseCase:
         *,
         params: KnowledgeFileUploadParams,
         rollback_registrar: KnowledgeFileRollbackRegistrar,
+        current_datetime: datetime,
     ) -> KnowledgeFileMutationResult:
         item = await self.item_storage.get_item(
             item_id=params.item_id,
@@ -77,17 +78,16 @@ class KnowledgeFilesUseCase:
         if existing_photo is not None:
             await self.file_service.delete_file(file=existing_photo)
             object_names_to_delete = (existing_photo.relative_path,)
-        now = datetime.now(tz=UTC)
         file = await self.file_service.create_file(
             params=params,
-            now=now,
+            now=current_datetime,
             rollback_registrar=rollback_registrar,
         )
         await self.item_storage.touch_items(
             item_ids={item.id},
             author_username=item.author_username,
             kind=item.kind,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         return KnowledgeFileMutationResult(
             file=file,
@@ -101,6 +101,7 @@ class KnowledgeFilesUseCase:
         file_id: str,
         author_username: str,
         params: KnowledgeFileUpdateParams,
+        current_datetime: datetime,
     ) -> KnowledgeFile:
         item = await self.item_storage.get_item_for_author(
             item_id=item_id,
@@ -112,17 +113,16 @@ class KnowledgeFilesUseCase:
         )
         if file.item_id != item.id or file.kind != KnowledgeFileKind.ATTACHMENT:
             raise KnowledgeFileNotFoundError
-        now = datetime.now(tz=UTC)
         file = await self.file_service.rename_file(
             file=file,
             params=params,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         await self.item_storage.touch_items(
             item_ids={item.id},
             author_username=item.author_username,
             kind=item.kind,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         return file
 
@@ -132,6 +132,7 @@ class KnowledgeFilesUseCase:
         item_id: str,
         file_id: str,
         author_username: str,
+        current_datetime: datetime,
     ) -> KnowledgeFileMutationResult:
         item = await self.item_storage.get_item_for_author(
             item_id=item_id,
@@ -148,7 +149,7 @@ class KnowledgeFilesUseCase:
             item_ids={item.id},
             author_username=item.author_username,
             kind=item.kind,
-            updated_at=datetime.now(tz=UTC),
+            updated_at=current_datetime,
         )
         return KnowledgeFileMutationResult(
             file=None,
@@ -160,6 +161,7 @@ class KnowledgeFilesUseCase:
         *,
         person_id: str,
         author_username: str,
+        current_datetime: datetime,
     ) -> KnowledgeFileMutationResult:
         item = await self.item_storage.get_item(
             item_id=person_id,
@@ -181,7 +183,7 @@ class KnowledgeFilesUseCase:
             item_ids={item.id},
             author_username=item.author_username,
             kind=item.kind,
-            updated_at=datetime.now(tz=UTC),
+            updated_at=current_datetime,
         )
         return KnowledgeFileMutationResult(
             file=None,

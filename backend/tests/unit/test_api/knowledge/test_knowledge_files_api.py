@@ -166,6 +166,8 @@ class TestKnowledgeFilesApi(ApiTestCase):
             self.use_case.upload_attachment.await_args.kwargs["rollback_registrar"]
             is self.rollback_registrar
         )
+        current_datetime = self.use_case.upload_attachment.await_args.kwargs["current_datetime"]
+        assert current_datetime.tzinfo is not None
 
     def test_attachment_delete_schedules_cleanup_after_commit(self) -> None:
         file = self.file(kind=KnowledgeFileKind.ATTACHMENT)
@@ -180,6 +182,8 @@ class TestKnowledgeFilesApi(ApiTestCase):
             )
 
         self.asserts.status(response=response, expected_status=codes.NO_CONTENT)
+        current_datetime = self.use_case.delete_attachment.await_args.kwargs["current_datetime"]
+        assert current_datetime.tzinfo is not None
         action = add_action.call_args.kwargs["action"]
         assert isinstance(action, partial)
         assert action.keywords == {"object_names": (file.relative_path,)}

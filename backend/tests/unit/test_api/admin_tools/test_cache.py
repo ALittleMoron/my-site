@@ -58,6 +58,7 @@ class TestAdminToolsCacheAPI(ApiTestCase):
     @pytest_asyncio.fixture(autouse=True)
     async def setup(self) -> None:
         self.use_case = await self.container.get_cache_tools_use_case()
+        self.policy = await self.container.get_cache_tools_policy()
 
     def test_get_cache_status(self) -> None:
         self.use_case.get_status.return_value = cache_status()
@@ -96,7 +97,7 @@ class TestAdminToolsCacheAPI(ApiTestCase):
                 "summary": {"attempted": 8, "written": 8, "skipped": 0},
             },
         }
-        self.use_case.get_status.assert_awaited_once_with()
+        self.use_case.get_status.assert_awaited_once_with(policy=self.policy)
 
     def test_clear_cache_returns_refreshed_status_without_warming(self) -> None:
         self.use_case.clear.return_value = cache_status()
@@ -105,7 +106,7 @@ class TestAdminToolsCacheAPI(ApiTestCase):
 
         self.asserts.status(response=response, expected_status=codes.OK)
         assert response.json()["domains"][0]["keyCount"] == 3
-        self.use_case.clear.assert_awaited_once_with()
+        self.use_case.clear.assert_awaited_once_with(policy=self.policy)
         self.use_case.enqueue_manual_warm.assert_not_awaited()
 
     def test_manual_warm_returns_pollable_queued_operation(self) -> None:

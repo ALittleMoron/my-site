@@ -297,6 +297,16 @@ class TestI18nCatalog:
         assert "self-recovers" in english_messages["siteBuild.architecture.infraBody"]
         assert "семиднев" not in russian_messages["siteBuild.architecture.infraBody"]
         assert "seven-day" not in english_messages["siteBuild.architecture.infraBody"]
+        russian_agent_body = russian_messages["siteBuild.architecture.agentBody"]
+        english_agent_body = english_messages["siteBuild.architecture.agentBody"]
+        assert "ограничен" in russian_agent_body.lower()
+        assert "allowlist" in russian_agent_body.lower()
+        assert "bounded" in english_agent_body.lower()
+        assert "allowlist" in english_agent_body.lower()
+        assert "семь" not in russian_agent_body.lower()
+        assert "ровно пять" not in russian_agent_body.lower()
+        assert "seven" not in english_agent_body.lower()
+        assert "exactly five" not in english_agent_body.lower()
         for expected, text in (
             ("SSR", russian_quality_body),
             ("SSR", english_quality_body),

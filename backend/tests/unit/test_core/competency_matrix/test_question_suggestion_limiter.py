@@ -6,7 +6,11 @@ from unittest.mock import Mock
 import pytest
 
 from core.competency_matrix.exceptions import QuestionSuggestionQuotaExceededError
-from core.competency_matrix.schemas import QuestionSuggestionLimitParams, QuestionSuggestionQuota
+from core.competency_matrix.schemas import (
+    QuestionSuggestionLimiterConfig,
+    QuestionSuggestionLimitParams,
+    QuestionSuggestionQuota,
+)
 from core.competency_matrix.services import QuestionSuggestionLimiter
 from core.competency_matrix.storages import QuestionSuggestionQuotaStorage
 from core.schemas import Secret
@@ -16,10 +20,13 @@ class TestQuestionSuggestionLimiter:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.quota_storage = Mock(spec=QuestionSuggestionQuotaStorage)
-        self.limiter = QuestionSuggestionLimiter(
-            quota_storage=self.quota_storage,
+        config = QuestionSuggestionLimiterConfig(
             quota_secret=Secret("quota-secret"),
             anonymous_daily_limit=10,
+        )
+        self.limiter = QuestionSuggestionLimiter(
+            quota_storage=self.quota_storage,
+            config=config,
         )
 
     async def test_check_create_allowed_consumes_hashed_anonymous_daily_quota(self) -> None:

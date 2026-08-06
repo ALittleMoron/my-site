@@ -70,7 +70,7 @@ class TestKnowledgeFileCrudService(TestCase):
             client=self.client,
             photo_processor=self.photo_processor,
             file_name_generator=self.file_name_generator,
-            rules=self.rules,
+            config=self.rules,
         )
 
     async def test_attachment_upload_persists_private_metadata_and_object(self) -> None:
@@ -259,6 +259,7 @@ class TestKnowledgeFilesUseCase(TestCase):
                 file_id=self.file.id,
                 author_username="owner",
                 params=KnowledgeFileUpdateParams(name="Renamed"),
+                current_datetime=NOW,
             )
 
     async def test_delete_attachment_returns_post_commit_cleanup_path(self) -> None:
@@ -270,6 +271,7 @@ class TestKnowledgeFilesUseCase(TestCase):
             item_id=self.item.id,
             file_id=self.file.id,
             author_username="owner",
+            current_datetime=NOW,
         )
 
         assert result == KnowledgeFileMutationResult(
@@ -277,3 +279,29 @@ class TestKnowledgeFilesUseCase(TestCase):
             object_names_to_delete=("attachments/private.bin",),
         )
         self.item_storage.touch_items.assert_awaited_once()
+        assert self.item_storage.touch_items.await_args.kwargs["updated_at"] == NOW
+
+    async def test_attachment_upload_reuses_supplied_datetime_for_file_and_item(self) -> None:
+        self.item_storage.get_item_for_author.return_value = self.item
+        params = KnowledgeFileUploadParams(
+            id="3" * 32,
+            item_id=self.item.id,
+            author_username="owner",
+            kind=KnowledgeFileKind.ATTACHMENT,
+            name="Private",
+            original_name="private.bin",
+            mime_type="application/octet-stream",
+            content=b"private",
+        )
+        self.file_service.create_file.return_value = self.file
+        rollback_registrar = Mock(spec=KnowledgeFileRollbackRegistrar)
+
+        result = await self.use_case.upload_attachment(
+            params=params,
+            rollback_registrar=rollback_registrar,
+            current_datetime=NOW,
+        )
+
+        assert result == self.file
+        assert self.file_service.create_file.await_args.kwargs["now"] == NOW
+        assert self.item_storage.touch_items.await_args.kwargs["updated_at"] == NOW

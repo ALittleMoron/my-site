@@ -23,7 +23,7 @@ from core.competency_matrix.exceptions import (
 )
 from core.enums import PublishStatusEnum
 from core.i18n.enums import LanguageEnum
-from core.schemas import ValuedDataclass
+from core.schemas import Secret, ValuedDataclass
 from core.types import SearchName
 
 
@@ -36,6 +36,12 @@ class CompetencyMatrixMissingFieldEnum(StrEnum):
     ANSWER_EN = "answerEn"
     INTERVIEW_ANSWER_EXPLANATION_RU = "interviewAnswerExplanationRu"
     INTERVIEW_ANSWER_EXPLANATION_EN = "interviewAnswerExplanationEn"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class QuestionSuggestionLimiterConfig:
+    quota_secret: Secret[str]
+    anonymous_daily_limit: int
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -10,7 +10,7 @@ from core.enums import PublishStatusEnum
 from core.files.markdown import extract_file_ids_from_markdown
 from core.files.schemas import StoredFile
 from core.i18n.enums import LanguageEnum
-from core.schemas import ValuedDataclass
+from core.schemas import Secret, ValuedDataclass
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -363,6 +363,12 @@ class ArticleFolderCreateParams:
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ArticleFolderPriorityUpdateParams:
     ordered_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ArticleAnalyticsConfig:
+    reaction_secret: Secret[str]
+    app_domain: str
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

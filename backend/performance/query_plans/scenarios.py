@@ -868,12 +868,14 @@ async def run_question_suggestion_exists(session: AsyncSession) -> None:
 async def run_get_queued_question(session: AsyncSession) -> None:
     await CompetencyMatrixDatabaseStorage(session=session).get_queued_question(
         EXISTING_QUEUED_QUESTION_ID,
+        lock=False,
     )
 
 
-async def run_get_queued_question_for_update(session: AsyncSession) -> None:
-    await CompetencyMatrixDatabaseStorage(session=session).get_queued_question_for_update(
+async def run_get_queued_question_with_lock(session: AsyncSession) -> None:
+    await CompetencyMatrixDatabaseStorage(session=session).get_queued_question(
         EXISTING_QUEUED_QUESTION_ID,
+        lock=True,
     )
 
 
@@ -3435,12 +3437,12 @@ STORAGE_SCENARIOS = (
     scenario(
         name="matrix_queue_detail_for_update",
         storage_class="CompetencyMatrixDatabaseStorage",
-        method_name="get_queued_question_for_update",
+        method_name="get_queued_question",
         group=QueryThresholdGroup.POINT_READ,
         expected_index_names=("competency_matrix__queued_question_model_pkey",),
         forbidden_seq_scan_relations=("competency_matrix__queued_question_model",),
         allow_seq_scan_reason=None,
-        run=run_get_queued_question_for_update,
+        run=run_get_queued_question_with_lock,
     ),
     scenario(
         name="matrix_queue_create",

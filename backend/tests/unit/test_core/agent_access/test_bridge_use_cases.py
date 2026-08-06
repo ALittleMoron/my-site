@@ -80,7 +80,6 @@ class TestAutomaticAgentCredentialRotationUseCase(TestCase):
             storage=self.storage,
             client=self.client,
             id_generator=self.id_generator,
-            policy=self.policy,
         )
         self.prepared = PreparedLocalAgentCredentialRotation(
             rotation_id=ROTATION_ID,
@@ -114,7 +113,9 @@ class TestAutomaticAgentCredentialRotationUseCase(TestCase):
         self.storage.load_pending_rotation.return_value = None
         self.storage.get_active_certificate_expires_at.return_value = NOW + timedelta(days=15)
 
-        assert await self.use_case.rotate_if_needed(current_datetime=NOW) is False
+        assert (
+            await self.use_case.rotate_if_needed(current_datetime=NOW, policy=self.policy) is False
+        )
 
         self.storage.prepare_rotation.assert_not_called()
         self.id_generator.get_next.assert_not_called()
@@ -156,7 +157,9 @@ class TestAutomaticAgentCredentialRotationUseCase(TestCase):
         self.client.confirm_certificate_rotation.side_effect = confirm
         self.storage.complete_rotation.side_effect = complete
 
-        assert await self.use_case.rotate_if_needed(current_datetime=NOW) is True
+        assert (
+            await self.use_case.rotate_if_needed(current_datetime=NOW, policy=self.policy) is True
+        )
 
         assert events == [
             f"prepare:{ROTATION_ID}",
@@ -189,8 +192,10 @@ class TestAutomaticAgentCredentialRotationUseCase(TestCase):
         self.client.confirm_certificate_rotation.return_value = self.confirmation
 
         with pytest.raises(RuntimeError, match="lost response"):
-            await self.use_case.rotate_if_needed(current_datetime=NOW)
-        assert await self.use_case.rotate_if_needed(current_datetime=NOW) is True
+            await self.use_case.rotate_if_needed(current_datetime=NOW, policy=self.policy)
+        assert (
+            await self.use_case.rotate_if_needed(current_datetime=NOW, policy=self.policy) is True
+        )
 
         expected_start = call(
             params=AgentCertificateRotationStartParams(
@@ -232,7 +237,9 @@ class TestAutomaticAgentCredentialRotationUseCase(TestCase):
         self.client.confirm_certificate_rotation.side_effect = confirm
         self.storage.complete_rotation.side_effect = complete
 
-        assert await self.use_case.rotate_if_needed(current_datetime=NOW) is True
+        assert (
+            await self.use_case.rotate_if_needed(current_datetime=NOW, policy=self.policy) is True
+        )
 
         assert events == ["activate", "confirm", "complete"]
         self.client.start_certificate_rotation.assert_not_awaited()
@@ -243,7 +250,9 @@ class TestAutomaticAgentCredentialRotationUseCase(TestCase):
         self.storage.is_rotation_active.return_value = True
         self.client.confirm_certificate_rotation.return_value = self.confirmation
 
-        assert await self.use_case.rotate_if_needed(current_datetime=NOW) is True
+        assert (
+            await self.use_case.rotate_if_needed(current_datetime=NOW, policy=self.policy) is True
+        )
 
         self.storage.activate_rotation.assert_not_called()
         self.storage.complete_rotation.assert_called_once_with(rotation=self.issued)
@@ -259,7 +268,7 @@ class TestAutomaticAgentCredentialRotationUseCase(TestCase):
         )
 
         with pytest.raises(AgentCertificateRotationConfirmationError):
-            await self.use_case.rotate_if_needed(current_datetime=NOW)
+            await self.use_case.rotate_if_needed(current_datetime=NOW, policy=self.policy)
 
         self.storage.complete_rotation.assert_not_called()
 
@@ -269,7 +278,7 @@ class TestAutomaticAgentCredentialRotationUseCase(TestCase):
         self.storage.persist_replacement.side_effect = RuntimeError("disk unavailable")
 
         with pytest.raises(RuntimeError, match="disk unavailable"):
-            await self.use_case.rotate_if_needed(current_datetime=NOW)
+            await self.use_case.rotate_if_needed(current_datetime=NOW, policy=self.policy)
 
         self.storage.activate_rotation.assert_not_called()
         self.client.confirm_certificate_rotation.assert_not_awaited()

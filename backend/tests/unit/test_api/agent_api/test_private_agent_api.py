@@ -25,10 +25,19 @@ from core.agent_access.exceptions import (
 )
 from core.agent_access.schemas import (
     AgentCertificate,
+    AgentCertificatePolicy,
     AgentCertificateRotation,
     AgentCertificateRotationResult,
     AgentIdentity,
+    MatrixAgentPolicy,
+    MatrixAuthoringContext,
+    MatrixQuestionClaim,
     MatrixQuestionDraftSaveResult,
+)
+from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
+from core.competency_matrix.schemas import (
+    CompetencyMatrixStructure,
+    QueuedCompetencyMatrixQuestion,
 )
 from infra.config.constants import constants
 from tests.unit.test_api.agent_api.conftest import NOW, MockAgentApiProvider
@@ -202,6 +211,93 @@ def test_wrong_scope_is_forbidden_before_business_use_case_and_audited(
     assert audit.result is AgentAuditResultEnum.REJECTED
 
 
+def test_claim_forwards_exact_matrix_policy_to_use_case(
+    agent_api_client: TestClient,
+    agent_api_provider: MockAgentApiProvider,
+    agent_identity: AgentIdentity,
+) -> None:
+    identity = replace(
+        agent_identity,
+        scopes=frozenset({AgentScopeEnum.MATRIX_QUEUE_CLAIM}),
+    )
+    agent_api_provider.identity_use_case.authenticate_business_client.return_value = identity
+    agent_api_provider.matrix_use_case.claim_next_matrix_question.return_value = (
+        MatrixQuestionClaim(
+            id="c" * 32,
+            agent_client_id=identity.agent_client_id,
+            question=QueuedCompetencyMatrixQuestion(
+                id="d" * 32,
+                question="What is PostgreSQL?",
+                grade=GradeEnum.MIDDLE,
+                sheet="Backend",
+                section="Databases",
+                subsection="PostgreSQL",
+                suggested_by_username="owner",
+                created_at=NOW,
+                claim=None,
+            ),
+            claimed_at=NOW,
+            expires_at=NOW,
+        )
+    )
+
+    response = agent_api_client.post(f"{PREFIX}/matrix/question-claims")
+
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {
+        "claimId": "c" * 32,
+        "queueItemId": "d" * 32,
+        "question": "What is PostgreSQL?",
+        "grade": "Middle",
+        "sheet": "Backend",
+        "section": "Databases",
+        "subsection": "PostgreSQL",
+        "suggestedByUsername": "owner",
+        "createdAt": NOW.isoformat().replace("+00:00", "Z"),
+        "expiresAt": NOW.isoformat().replace("+00:00", "Z"),
+    }
+    assert (
+        agent_api_provider.matrix_use_case.claim_next_matrix_question.await_args.kwargs["policy"]
+        is agent_api_provider.matrix_policy
+    )
+
+
+def test_authoring_context_forwards_exact_matrix_policy_to_use_case(
+    agent_api_client: TestClient,
+    agent_api_provider: MockAgentApiProvider,
+    agent_identity: AgentIdentity,
+) -> None:
+    identity = replace(
+        agent_identity,
+        scopes=frozenset({AgentScopeEnum.MATRIX_CONTEXT_READ}),
+    )
+    agent_api_provider.identity_use_case.authenticate_business_client.return_value = identity
+    agent_api_provider.matrix_use_case.get_matrix_authoring_context.return_value = (
+        MatrixAuthoringContext(
+            structure=CompetencyMatrixStructure(sheets=[]),
+            grades=(GradeEnum.MIDDLE,),
+            interview_frequencies=(InterviewFrequencyEnum.OFTEN,),
+            minimum_resource_count=1,
+            maximum_resource_count=3,
+        )
+    )
+
+    response = agent_api_client.get(f"{PREFIX}/matrix/authoring-context")
+
+    assert response.status_code == HTTP_200_OK
+    assert response.json() == {
+        "structure": {"sheets": []},
+        "grades": ["Middle"],
+        "interviewFrequencies": ["often"],
+        "minimumResourceCount": 1,
+        "maximumResourceCount": 3,
+    }
+    assert (
+        agent_api_provider.matrix_use_case.get_matrix_authoring_context.await_args.kwargs["policy"]
+        is agent_api_provider.matrix_policy
+    )
+
+
 def test_save_schema_rejects_status_unknown_fields_and_authored_values_are_sanitized(
     agent_api_client: TestClient,
     agent_api_provider: MockAgentApiProvider,
@@ -310,6 +406,10 @@ def test_save_maps_path_claim_id_and_never_accepts_publish_state(
         "params"
     ]
     assert params.claim_id == claim_id
+    assert isinstance(
+        agent_api_provider.matrix_use_case.save_matrix_question_draft.await_args.kwargs["policy"],
+        MatrixAgentPolicy,
+    )
     assert not hasattr(params, "publish_status")
     assert not hasattr(params, "published_at")
 
@@ -354,6 +454,10 @@ def test_rotation_uses_client_authentication_and_client_generated_id(
     assert params.rotation_id == rotation_id
     assert params.csr_pem == "certificate signing request"
     assert params.rotated_at == NOW
+    assert isinstance(
+        agent_api_provider.rotation_use_case.rotate.await_args.kwargs["policy"],
+        AgentCertificatePolicy,
+    )
     agent_api_provider.audit_use_case.record.assert_not_awaited()
 
 

@@ -16,7 +16,9 @@ from core.agent_access.schemas import (
     AgentAuditEvent,
     AgentAuditEventPage,
     AgentAuditEventPageParams,
+    AgentAuditPolicy,
     AgentCertificate,
+    AgentCertificatePolicy,
     AgentClient,
     AgentClientDetails,
     AgentClientRegisterParams,
@@ -95,12 +97,14 @@ class TestOwnerAgentClientsAPI(ApiTestCase):
         assert "privateKey" not in response.text
         assert response.json()["certificatePem"] == self.certificate.certificate_pem
         params = self.use_case.register_client.await_args.kwargs["params"]
+        policy = self.use_case.register_client.await_args.kwargs["policy"]
         assert params == AgentClientRegisterParams(
             name="desktop-codex",
             scopes=frozenset(AgentScopeEnum),
             csr_pem="-----BEGIN CERTIFICATE REQUEST-----\ncsr\n-----END CERTIFICATE REQUEST-----",
             registered_at=params.registered_at,
         )
+        assert isinstance(policy, AgentCertificatePolicy)
 
     def test_duplicate_client_name_returns_stable_conflict(self) -> None:
         self.use_case.register_client.side_effect = AgentClientNameConflictError
@@ -174,6 +178,7 @@ class TestOwnerAgentClientsAPI(ApiTestCase):
             cursor=None,
         )
         assert isinstance(call.kwargs["requested_at"], datetime)
+        assert isinstance(call.kwargs["policy"], AgentAuditPolicy)
 
     def test_owner_reads_next_audit_page_from_cursor(self) -> None:
         self.use_case.list_audit_events.return_value = AgentAuditEventPage(

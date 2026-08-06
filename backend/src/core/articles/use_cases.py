@@ -13,6 +13,7 @@ from core.articles.exceptions import (
 )
 from core.articles.schemas import (
     Article,
+    ArticleAnalyticsConfig,
     ArticleAnalyticsStats,
     ArticleCreateParams,
     ArticleFilters,
@@ -36,7 +37,6 @@ from core.files.clients import FileClient
 from core.files.enums import FilePurpose
 from core.files.services import FileService
 from core.i18n.enums import LanguageEnum
-from core.schemas import Secret
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
@@ -283,8 +283,6 @@ class ArticlesUseCase:
 class ArticleAnalyticsUseCase:
     articles_storage: ArticlesStorage
     analytics_storage: ArticleAnalyticsStorage
-    reaction_secret: Secret[str]
-    app_domain: str
     error_reporter: ArticleAnalyticsErrorReporter
 
     async def track_public_view(
@@ -292,11 +290,12 @@ class ArticleAnalyticsUseCase:
         *,
         article: Article,
         referrer: str | None,
+        config: ArticleAnalyticsConfig,
     ) -> None:
         try:
             await self.track_view(
                 article=article,
-                source_category=self._classify_source_category(referrer=referrer),
+                source_category=self._classify_source_category(referrer=referrer, config=config),
             )
         except Exception as exc:  # noqa: BLE001
             self.error_reporter.report_public_view_tracking_failure(article=article, error=exc)
@@ -339,6 +338,7 @@ class ArticleAnalyticsUseCase:
         slug: str,
         client_token: str,
         reaction_kind: ArticleReactionKind | None,
+        config: ArticleAnalyticsConfig,
     ) -> None:
         article = await self._get_published_article(slug=slug)
         await self.analytics_storage.set_reaction(
@@ -346,6 +346,7 @@ class ArticleAnalyticsUseCase:
             article_scoped_voter_hash=self._build_article_scoped_voter_hash(
                 article_id=article.id,
                 client_token=client_token,
+                config=config,
             ),
             reaction_kind=reaction_kind,
         )
@@ -380,14 +381,19 @@ class ArticleAnalyticsUseCase:
             raise ArticleNotFoundError
         return article
 
-    def _classify_source_category(self, *, referrer: str | None) -> ArticleViewSourceCategory:
+    def _classify_source_category(
+        self,
+        *,
+        referrer: str | None,
+        config: ArticleAnalyticsConfig,
+    ) -> ArticleViewSourceCategory:
         if not referrer:
             return ArticleViewSourceCategory.DIRECT
         hostname = urlparse(referrer).hostname
         if hostname is None:
             return ArticleViewSourceCategory.UNKNOWN
         normalized_hostname = hostname.lower()
-        app_domain = self.app_domain.lower()
+        app_domain = config.app_domain.lower()
         if normalized_hostname == app_domain or normalized_hostname.endswith(f".{app_domain}"):
             return ArticleViewSourceCategory.INTERNAL
         if self._is_search_hostname(hostname=normalized_hostname):
@@ -423,10 +429,16 @@ class ArticleAnalyticsUseCase:
             )
         )
 
-    def _build_article_scoped_voter_hash(self, *, article_id: str, client_token: str) -> str:
+    def _build_article_scoped_voter_hash(
+        self,
+        *,
+        article_id: str,
+        client_token: str,
+        config: ArticleAnalyticsConfig,
+    ) -> str:
         message = f"{article_id}:{client_token}".encode()
         return hmac.new(
-            self.reaction_secret.get_secret_value().encode(),
+            config.reaction_secret.get_secret_value().encode(),
             message,
             sha256,
         ).hexdigest()

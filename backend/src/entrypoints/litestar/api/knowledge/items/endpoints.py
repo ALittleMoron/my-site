@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka import FromDishka
@@ -95,12 +96,14 @@ class AdminKnowledgeTagsApiController(Controller):
         ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[KnowledgeTagsUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> KnowledgeTagResponseSchema:
         return KnowledgeTagResponseSchema.from_domain_schema(
             schema=await use_case.update_tag(
                 tag_id=tag_id,
                 params=data.to_update_schema(),
                 author_username=request.user.username,
+                current_datetime=current_datetime,
             ),
         )
 

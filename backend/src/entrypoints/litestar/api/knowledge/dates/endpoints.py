@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka import FromDishka
@@ -80,10 +81,12 @@ class AdminKnowledgeDatesApiController(Controller):
         ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[KnowledgeDatesUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> KnowledgeDateResponseSchema:
         return KnowledgeDateResponseSchema.from_domain_schema(
             schema=await use_case.create_date(
                 params=data.to_domain_schema(author_username=request.user.username),
+                today=current_datetime.date(),
             ),
         )
 
@@ -133,12 +136,14 @@ class AdminKnowledgeDatesApiController(Controller):
         ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[KnowledgeDatesUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> KnowledgeDateResponseSchema:
         return KnowledgeDateResponseSchema.from_domain_schema(
             schema=await use_case.update_date(
                 date_id=date_id,
                 params=data.to_domain_schema(),
                 author_username=request.user.username,
+                current_datetime=current_datetime,
             ),
         )
 
@@ -148,17 +153,19 @@ class AdminKnowledgeDatesApiController(Controller):
         name="admin-knowledge-dates-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
-    async def delete_date(
+    async def delete_date(  # noqa: PLR0913
         self,
         date_id: KnowledgeDateIdPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[KnowledgeDatesUseCase],
+        current_datetime: FromDishka[datetime],
         object_cleaner: FromDishka[KnowledgeFileObjectCleaner],
         post_commit_actions: FromDishka[PostCommitActions],
     ) -> None:
         object_names = await use_case.delete_date(
             date_id=date_id,
             author_username=request.user.username,
+            current_datetime=current_datetime,
         )
         register_knowledge_object_cleanup(
             object_names=object_names,

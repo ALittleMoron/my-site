@@ -2,6 +2,7 @@ from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.articles.event_dispatchers import ArticleAnalyticsErrorReporter
+from core.articles.schemas import ArticleAnalyticsConfig
 from core.articles.storages import ArticleAnalyticsStorage, ArticlesStorage
 from core.articles.use_cases import (
     ArticleAnalyticsUseCase,
@@ -36,6 +37,13 @@ class ArticlesProvider(Provider):
     async def provide_article_analytics_error_reporter(self) -> ArticleAnalyticsErrorReporter:
         return StructlogArticleAnalyticsErrorReporter()
 
+    @provide(scope=Scope.APP)
+    async def provide_article_analytics_config(self) -> ArticleAnalyticsConfig:
+        return ArticleAnalyticsConfig(
+            reaction_secret=settings.app.secret_key.to_domain_secret(),
+            app_domain=settings.app.domain,
+        )
+
     @provide(scope=Scope.REQUEST)
     async def provide_articles_use_case(
         self,
@@ -59,7 +67,5 @@ class ArticlesProvider(Provider):
         return ArticleAnalyticsUseCase(
             articles_storage=storage,
             analytics_storage=analytics_storage,
-            reaction_secret=settings.app.secret_key.to_domain_secret(),
-            app_domain=settings.app.domain,
             error_reporter=error_reporter,
         )

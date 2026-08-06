@@ -14,7 +14,7 @@ from dishka.integrations.litestar import LitestarProvider
 from litestar import Litestar
 from litestar.testing import TestClient
 
-from core.agent_access.schemas import AgentIdentity
+from core.agent_access.schemas import AgentCertificatePolicy, AgentIdentity, MatrixAgentPolicy
 from core.agent_access.use_cases import (
     AgentAuditUseCase,
     AgentCertificateRotationUseCase,
@@ -37,6 +37,11 @@ class MockAgentApiProvider(Provider):
         self.audit_use_case = AsyncMock(spec=AgentAuditUseCase)
         self.id_generator = Mock(spec=HexUuidIdGenerator)
         self.id_generator.get_next.return_value = "request-id"
+        self.matrix_policy = MatrixAgentPolicy(
+            claim_ttl_seconds=7200,
+            minimum_resource_count=1,
+            maximum_resource_count=3,
+        )
 
     @provide(scope=Scope.REQUEST)
     def provide_audit_use_case(self) -> AgentAuditUseCase:
@@ -61,6 +66,18 @@ class MockAgentApiProvider(Provider):
     @provide(scope=Scope.APP)
     def provide_id_generator(self) -> HexUuidIdGenerator:
         return cast("HexUuidIdGenerator", self.id_generator)
+
+    @provide(scope=Scope.APP)
+    def provide_agent_certificate_policy(self) -> AgentCertificatePolicy:
+        return AgentCertificatePolicy(
+            lifetime_seconds=7_776_000,
+            rotation_window_seconds=1_209_600,
+            normal_access_overlap_seconds=900,
+        )
+
+    @provide(scope=Scope.APP)
+    def provide_matrix_agent_policy(self) -> MatrixAgentPolicy:
+        return self.matrix_policy
 
     @provide(scope=Scope.REQUEST)
     def provide_transaction_state(self) -> DatabaseTransactionState:

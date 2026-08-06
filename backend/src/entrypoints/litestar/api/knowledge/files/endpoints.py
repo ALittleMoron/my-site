@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from dishka import FromDishka
@@ -73,6 +74,7 @@ class AdminKnowledgeFilesApiController(Controller):
         object_cleaner: FromDishka[KnowledgeFileObjectCleaner],
         post_commit_actions: FromDishka[PostCommitActions],
         rollback_registrar: FromDishka[KnowledgeFileRollbackRegistrar],
+        current_datetime: FromDishka[datetime],
     ) -> KnowledgeFileResponseSchema:
         result = await use_case.replace_person_photo(
             params=await data.to_domain_schema(
@@ -81,6 +83,7 @@ class AdminKnowledgeFilesApiController(Controller):
                 author_username=request.user.username,
             ),
             rollback_registrar=rollback_registrar,
+            current_datetime=current_datetime,
         )
         if result.file is None:
             raise InvalidFileDataError
@@ -97,17 +100,19 @@ class AdminKnowledgeFilesApiController(Controller):
         name="admin-knowledge-person-photo-delete-api-handler",
         status_code=status_codes.HTTP_204_NO_CONTENT,
     )
-    async def delete_person_photo(
+    async def delete_person_photo(  # noqa: PLR0913
         self,
         person_id: PersonIdPath,
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[KnowledgeFilesUseCase],
         object_cleaner: FromDishka[KnowledgeFileObjectCleaner],
         post_commit_actions: FromDishka[PostCommitActions],
+        current_datetime: FromDishka[datetime],
     ) -> None:
         result = await use_case.delete_person_photo(
             person_id=person_id,
             author_username=request.user.username,
+            current_datetime=current_datetime,
         )
         register_knowledge_object_cleanup(
             object_names=result.object_names_to_delete,
@@ -137,6 +142,7 @@ class AdminKnowledgeFilesApiController(Controller):
         use_case: FromDishka[KnowledgeFilesUseCase],
         id_generator: FromDishka[HexUuidIdGenerator],
         rollback_registrar: FromDishka[KnowledgeFileRollbackRegistrar],
+        current_datetime: FromDishka[datetime],
     ) -> KnowledgeFileResponseSchema:
         file = await use_case.upload_attachment(
             params=await data.to_domain_schema(
@@ -145,6 +151,7 @@ class AdminKnowledgeFilesApiController(Controller):
                 author_username=request.user.username,
             ),
             rollback_registrar=rollback_registrar,
+            current_datetime=current_datetime,
         )
         return KnowledgeFileResponseSchema.from_domain_schema(schema=file)
 
@@ -154,7 +161,7 @@ class AdminKnowledgeFilesApiController(Controller):
         name="admin-knowledge-attachment-rename-api-handler",
         status_code=status_codes.HTTP_200_OK,
     )
-    async def rename_attachment(
+    async def rename_attachment(  # noqa: PLR0913
         self,
         item_id: KnowledgeItemIdPath,
         file_id: KnowledgeFileIdPath,
@@ -168,6 +175,7 @@ class AdminKnowledgeFilesApiController(Controller):
         ],
         request: Request[JwtUser, Token | None, State],
         use_case: FromDishka[KnowledgeFilesUseCase],
+        current_datetime: FromDishka[datetime],
     ) -> KnowledgeFileResponseSchema:
         return KnowledgeFileResponseSchema.from_domain_schema(
             schema=await use_case.rename_attachment(
@@ -175,6 +183,7 @@ class AdminKnowledgeFilesApiController(Controller):
                 file_id=file_id,
                 author_username=request.user.username,
                 params=data.to_domain_schema(),
+                current_datetime=current_datetime,
             ),
         )
 
@@ -192,11 +201,13 @@ class AdminKnowledgeFilesApiController(Controller):
         use_case: FromDishka[KnowledgeFilesUseCase],
         object_cleaner: FromDishka[KnowledgeFileObjectCleaner],
         post_commit_actions: FromDishka[PostCommitActions],
+        current_datetime: FromDishka[datetime],
     ) -> None:
         result = await use_case.delete_attachment(
             item_id=item_id,
             file_id=file_id,
             author_username=request.user.username,
+            current_datetime=current_datetime,
         )
         register_knowledge_object_cleanup(
             object_names=result.object_names_to_delete,

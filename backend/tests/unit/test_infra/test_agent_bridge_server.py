@@ -9,6 +9,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 import agent_bridge
 from core.agent_access.schemas import (
     AgentMatrixQuestionClaim,
+    LocalAgentCredentialRotationPolicy,
     MatrixAuthoringContext,
     MatrixQuestionDraftSaveResult,
 )
@@ -36,7 +37,11 @@ from infra.cryptography.agent_credentials import (
     ExternalAgentCredentialStore,
 )
 from infra.http.agent_api import AgentApiHttpClient
-from infra.ioc.agent_bridge import AgentBridgeRuntime, compose_agent_bridge_runtime
+from infra.ioc.agent_bridge import (
+    AgentBridgeRuntime,
+    AutomaticAgentCredentialRotationRuntime,
+    compose_agent_bridge_runtime,
+)
 
 CLAIM_ID = "1" * 32
 QUEUE_ITEM_ID = "2" * 32
@@ -215,8 +220,11 @@ def test_agent_bridge_composition_selects_desktop_rotation_and_external_read_onl
     )
 
     assert desktop.automatic_rotation is not None
-    assert isinstance(desktop.automatic_rotation.storage, DesktopAgentCredentialStore)
-    assert desktop.server.use_case.client is desktop.automatic_rotation.client
+    assert isinstance(
+        desktop.automatic_rotation.use_case.storage,
+        DesktopAgentCredentialStore,
+    )
+    assert desktop.server.use_case.client is desktop.automatic_rotation.use_case.client
     assert external.automatic_rotation is None
     external_client = external.server.use_case.client
     assert isinstance(external_client, AgentApiHttpClient)
@@ -228,9 +236,15 @@ def test_agent_bridge_main_rotates_desktop_once_with_explicit_time_before_stdio(
 ) -> None:
     events: list[str] = []
     rotation = AsyncMock(spec=AutomaticAgentCredentialRotationUseCase)
+    policy = LocalAgentCredentialRotationPolicy(rotation_window_seconds=1_209_600)
 
-    async def rotate_once(*, current_datetime: datetime) -> bool:
+    async def rotate_once(
+        *,
+        current_datetime: datetime,
+        policy: LocalAgentCredentialRotationPolicy,
+    ) -> bool:
         assert current_datetime.tzinfo is UTC
+        assert policy.rotation_window_seconds == 1_209_600
         events.append("rotate")
         return False
 
@@ -240,7 +254,10 @@ def test_agent_bridge_main_rotates_desktop_once_with_explicit_time_before_stdio(
     server = Mock(spec=AgentBridgeServer)
     server.server = fast_mcp
     runtime = AgentBridgeRuntime(
-        automatic_rotation=cast("AutomaticAgentCredentialRotationUseCase", rotation),
+        automatic_rotation=AutomaticAgentCredentialRotationRuntime(
+            use_case=cast("AutomaticAgentCredentialRotationUseCase", rotation),
+            policy=policy,
+        ),
         server=server,
     )
     settings = Mock()

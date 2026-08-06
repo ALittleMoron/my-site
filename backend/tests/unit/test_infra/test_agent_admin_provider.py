@@ -1,5 +1,6 @@
 from dishka import make_async_container
 
+from core.agent_access.schemas import AgentAuditPolicy
 from core.agent_access.storages import (
     AgentAdminStorage,
     AgentAuditStorage,
@@ -19,11 +20,10 @@ async def test_main_container_resolves_agent_audit_cleanup_use_case() -> None:
         async with container() as request_container:
             use_case = await request_container.get(AgentAuditCleanupUseCase)
             storage = await request_container.get(AgentAuditStorage)
+            policy = await request_container.get(AgentAuditPolicy)
 
             assert use_case.storage is storage
-            assert (
-                use_case.policy.retention_seconds == constants.agent_access.audit_retention_seconds
-            )
+            assert policy.retention_seconds == constants.agent_access.audit_retention_seconds
     finally:
         await container.close()
 

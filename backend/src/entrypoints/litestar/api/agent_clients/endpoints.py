@@ -6,7 +6,12 @@ from dishka.integrations.litestar import DishkaRouter
 from litestar import Controller, get, post, status_codes
 from litestar.di import NamedDependency, Provide
 
-from core.agent_access.schemas import AgentAuditEventPageParams, AgentClientRevokeParams
+from core.agent_access.schemas import (
+    AgentAuditEventPageParams,
+    AgentAuditPolicy,
+    AgentCertificatePolicy,
+    AgentClientRevokeParams,
+)
 from core.agent_access.use_cases import AgentAdminUseCase
 from entrypoints.litestar.api.agent_clients.dependencies import (
     provide_agent_audit_event_page_params,
@@ -63,9 +68,11 @@ class AdminAgentClientsApiController(Controller):
         ],
         current_datetime: FromDishka[datetime],
         use_case: FromDishka[AgentAdminUseCase],
+        policy: FromDishka[AgentCertificatePolicy],
     ) -> AgentClientRegistrationResponseSchema:
         result = await use_case.register_client(
             params=data.to_domain_schema(registered_at=current_datetime),
+            policy=policy,
         )
         return AgentClientRegistrationResponseSchema.from_domain_schema(schema=result)
 
@@ -105,10 +112,12 @@ class AdminAgentClientsApiController(Controller):
         params: NamedDependency[AgentAuditEventPageParams],
         current_datetime: FromDishka[datetime],
         use_case: FromDishka[AgentAdminUseCase],
+        policy: FromDishka[AgentAuditPolicy],
     ) -> AgentAuditEventsResponseSchema:
         page = await use_case.list_audit_events(
             params=params,
             requested_at=current_datetime,
+            policy=policy,
         )
         return AgentAuditEventsResponseSchema.from_domain_schema(schema=page)
 

@@ -49,7 +49,6 @@ class TestCacheToolsUseCase:
             operation_storage=self.operation_storage,
             task_dispatcher=self.dispatcher,
             id_generator=self.id_generator,
-            policy=self.policy,
         )
 
     async def test_get_status_reports_metrics_and_latest_manual_operation(self) -> None:
@@ -82,7 +81,7 @@ class TestCacheToolsUseCase:
         self.status_storage.get_domain_status.side_effect = domain_statuses
         self.operation_storage.get_latest.return_value = latest_operation
 
-        result = await self.use_case.get_status()
+        result = await self.use_case.get_status(policy=self.policy)
 
         assert result.enabled is True
         assert result.configured_ttl_seconds == 86_400
@@ -100,6 +99,10 @@ class TestCacheToolsUseCase:
             operation_storage=self.operation_storage,
             task_dispatcher=self.dispatcher,
             id_generator=self.id_generator,
+        )
+        self.operation_storage.get_latest.return_value = None
+
+        result = await use_case.get_status(
             policy=CacheToolsPolicy(
                 enabled=False,
                 configured_ttl_seconds=86_400,
@@ -107,9 +110,6 @@ class TestCacheToolsUseCase:
                 domains=DOMAINS,
             ),
         )
-        self.operation_storage.get_latest.return_value = None
-
-        result = await use_case.get_status()
 
         assert result.domains == tuple(
             CacheDomainStatus(
@@ -134,7 +134,7 @@ class TestCacheToolsUseCase:
             for domain in DOMAINS
         )
 
-        result = await self.use_case.clear()
+        result = await self.use_case.clear(policy=self.policy)
 
         self.invalidation_storage.clear_domains.assert_awaited_once_with(domains=DOMAINS)
         assert all(domain_status.key_count == 0 for domain_status in result.domains)
@@ -147,6 +147,10 @@ class TestCacheToolsUseCase:
             operation_storage=self.operation_storage,
             task_dispatcher=self.dispatcher,
             id_generator=self.id_generator,
+        )
+        self.operation_storage.get_latest.return_value = None
+
+        result = await use_case.clear(
             policy=CacheToolsPolicy(
                 enabled=False,
                 configured_ttl_seconds=86_400,
@@ -154,9 +158,6 @@ class TestCacheToolsUseCase:
                 domains=DOMAINS,
             ),
         )
-        self.operation_storage.get_latest.return_value = None
-
-        result = await use_case.clear()
 
         assert result.enabled is False
         self.invalidation_storage.clear_domains.assert_not_awaited()

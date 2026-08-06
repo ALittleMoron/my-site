@@ -8,11 +8,13 @@ from dishka import AsyncContainer
 from core.account.storages import UserAccountStorage
 from core.account.use_cases import AccountsUseCase
 from core.agent_access.use_cases import AgentAdminUseCase
+from core.articles.schemas import ArticleAnalyticsConfig
 from core.articles.use_cases import ArticleAnalyticsUseCase, ArticlesUseCase
 from core.auth.password_hashers import PasswordHasher
 from core.auth.storages import AuthSessionStorage, AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.use_cases import AuthSessionCleanupUseCase, AuthUseCase
+from core.cache_tools.schemas import CacheToolsPolicy
 from core.cache_tools.use_cases import CacheToolsUseCase
 from core.calendar.use_cases import CalendarUseCase
 from core.competency_matrix.generators import ItemIdGenerator, ResourceIdGenerator
@@ -77,6 +79,9 @@ class IocContainerHelper:
         use_case = await self.container.get(ArticleAnalyticsUseCase)
         return cast("Mock", use_case)
 
+    async def get_article_analytics_config(self) -> ArticleAnalyticsConfig:
+        return await self.container.get(ArticleAnalyticsConfig)
+
     async def get_wiki_links_use_case(self) -> Mock:
         use_case = await self.container.get(WikiLinksUseCase)
         return cast("Mock", use_case)
@@ -109,6 +114,9 @@ class IocContainerHelper:
     async def get_cache_tools_use_case(self) -> Mock:
         use_case = await self.container.get(CacheToolsUseCase)
         return cast("Mock", use_case)
+
+    async def get_cache_tools_policy(self) -> CacheToolsPolicy:
+        return await self.container.get(CacheToolsPolicy)
 
     # USER
     async def get_user_storage(self) -> Mock:

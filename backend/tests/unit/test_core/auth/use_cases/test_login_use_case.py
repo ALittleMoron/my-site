@@ -44,6 +44,11 @@ class TestAuthUseCase(ContainerTestCase):
         self.auth_session_secret_generator.hash_secret.return_value = SessionSecretHash(
             "session-secret-hash",
         )
+        self.config = AuthUseCaseConfig(
+            access_token_expires_in_seconds=900,
+            session_expires_in_seconds=2_592_000,
+            session_absolute_expires_in_seconds=2_592_000,
+        )
         self.auth_session_storage.create_session.return_value = AuthSession(
             id="session-id",
             username="test",
@@ -65,17 +70,13 @@ class TestAuthUseCase(ContainerTestCase):
             user_storage=self.user_storage,
             event_reporter=self.auth_event_reporter,
             auth_session_secret_generator=self.auth_session_secret_generator,
-            config=AuthUseCaseConfig(
-                access_token_expires_in_seconds=900,
-                session_expires_in_seconds=2_592_000,
-                session_absolute_expires_in_seconds=2_592_000,
-            ),
         )
 
     async def test_login_user_not_found(self) -> None:
         self.user_storage.get_user_by_username.side_effect = UserNotFoundError
         with pytest.raises(UnauthorizedError):
             await self.use_case.login(
+                config=self.config,
                 params=AuthLoginParams(
                     username="test",
                     password="test",
@@ -96,6 +97,7 @@ class TestAuthUseCase(ContainerTestCase):
         )
         with pytest.raises(ForbiddenError):
             await self.use_case.login(
+                config=self.config,
                 params=AuthLoginParams(
                     username="test",
                     password="test",
@@ -118,6 +120,7 @@ class TestAuthUseCase(ContainerTestCase):
         )
         with pytest.raises(UnauthorizedError):
             await self.use_case.login(
+                config=self.config,
                 params=AuthLoginParams(
                     username="test",
                     password="test",
@@ -140,6 +143,7 @@ class TestAuthUseCase(ContainerTestCase):
         )
         with pytest.raises(UnauthorizedError):
             await self.use_case.login(
+                config=self.config,
                 params=AuthLoginParams(
                     username="test",
                     password="test",
@@ -162,6 +166,7 @@ class TestAuthUseCase(ContainerTestCase):
             role=RoleEnum.ADMIN,
         )
         result = await self.use_case.login(
+            config=self.config,
             params=AuthLoginParams(
                 username="test",
                 password="test",
@@ -185,6 +190,7 @@ class TestAuthUseCase(ContainerTestCase):
             role=RoleEnum.ADMIN,
         )
         result = await self.use_case.login(
+            config=self.config,
             params=AuthLoginParams(
                 username="test",
                 password="test",

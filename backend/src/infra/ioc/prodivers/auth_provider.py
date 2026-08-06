@@ -77,11 +77,18 @@ class AuthProvider(Provider):
         return AuthSessionSecretGenerator(byte_count=constants.auth.session_secret_byte_count)
 
     @provide(scope=Scope.APP)
-    async def provide_config(self) -> AuthUseCaseConfig:
+    async def provide_auth_use_case_config(self) -> AuthUseCaseConfig:
         return AuthUseCaseConfig(
             access_token_expires_in_seconds=settings.auth.token_expire_seconds,
             session_expires_in_seconds=settings.auth.session_expire_seconds,
             session_absolute_expires_in_seconds=settings.auth.session_absolute_expire_seconds,
+        )
+
+    @provide(scope=Scope.APP)
+    async def provide_auth_session_cleanup_policy(self) -> AuthSessionCleanupPolicy:
+        return AuthSessionCleanupPolicy(
+            expiring_soon_days=constants.auth.session_expiring_soon_days,
+            scheduled_prune_interval_seconds=settings.taskiq.auth_session_prune_interval_seconds,
         )
 
     @provide(scope=Scope.REQUEST, cache=False)
@@ -111,7 +118,6 @@ class AuthProvider(Provider):
         auth_session_storage: AuthSessionStorage,
         user_storage: UserAccountStorage,
         auth_session_secret_generator: AuthSessionSecretGenerator,
-        config: AuthUseCaseConfig,
     ) -> AuthUseCase:
         return AuthUseCase(
             hasher=hasher,
@@ -122,7 +128,6 @@ class AuthProvider(Provider):
             user_storage=user_storage,
             event_reporter=StructlogAuthEventReporter(),
             auth_session_secret_generator=auth_session_secret_generator,
-            config=config,
         )
 
     @provide(scope=Scope.REQUEST)
@@ -132,10 +137,4 @@ class AuthProvider(Provider):
     ) -> AuthSessionCleanupUseCase:
         return AuthSessionCleanupUseCase(
             auth_session_storage=auth_session_storage,
-            policy=AuthSessionCleanupPolicy(
-                expiring_soon_days=constants.auth.session_expiring_soon_days,
-                scheduled_prune_interval_seconds=(
-                    settings.taskiq.auth_session_prune_interval_seconds
-                ),
-            ),
         )

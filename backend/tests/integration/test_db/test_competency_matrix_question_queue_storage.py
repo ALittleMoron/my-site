@@ -249,7 +249,10 @@ class TestCompetencyMatrixQuestionQueueStorage(StorageTestCase):
 
     async def test_get_queued_question_not_found(self) -> None:
         with pytest.raises(QueuedCompetencyMatrixQuestionNotFoundError):
-            await self.storage.get_queued_question(question_id=self.factory.core.hex_id(404))
+            await self.storage.get_queued_question(
+                question_id=self.factory.core.hex_id(404),
+                lock=False,
+            )
 
     async def test_delete_queued_question_removes_pending_entry(self) -> None:
         await self.storage_helper.create_queued_matrix_questions(

@@ -44,6 +44,15 @@ class ResponseCacheWarmProvider(Provider):
     response_cache_warm_target_collector = provide(ResponseCacheWarmTargetCollector)
     response_cache_warm_writer = provide(ResponseCacheWarmWriter)
 
+    @provide(scope=Scope.APP)
+    async def provide_cache_tools_policy(self) -> CacheToolsPolicy:
+        return CacheToolsPolicy(
+            enabled=settings.app.use_cache,
+            configured_ttl_seconds=constants.response_cache.default_ttl_seconds,
+            scheduled_warm_interval_seconds=settings.taskiq.cache_warm_interval_seconds,
+            domains=tuple(CacheDomainEnum),
+        )
+
     @provide
     async def provide_response_cache_domain_store(
         self,
@@ -129,12 +138,6 @@ class ResponseCacheWarmProvider(Provider):
             operation_storage=operation_storage,
             task_dispatcher=TaskiqCacheWarmDispatcher(),
             id_generator=id_generator,
-            policy=CacheToolsPolicy(
-                enabled=settings.app.use_cache,
-                configured_ttl_seconds=constants.response_cache.default_ttl_seconds,
-                scheduled_warm_interval_seconds=settings.taskiq.cache_warm_interval_seconds,
-                domains=tuple(CacheDomainEnum),
-            ),
         )
 
     @provide

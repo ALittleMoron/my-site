@@ -1,5 +1,5 @@
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import datetime
 
 from core.knowledge.dates.schemas import KnowledgeDateReference
 from core.knowledge.dates.storages import KnowledgeDatesStorage
@@ -224,6 +224,7 @@ class PeopleUseCase:
         person_id: str,
         params: PersonUpdateParams,
         author_username: str,
+        current_datetime: datetime,
     ) -> Person:
         item = await self.item_service.get_item(
             item_id=person_id,
@@ -232,7 +233,7 @@ class PeopleUseCase:
         )
         details = params.to_details(item_id=person_id)
         if details.birthday is not None:
-            details.birthday.validate(today=datetime.now(tz=UTC).date())
+            details.birthday.validate(today=current_datetime.date())
         await self.people_storage.get_details(
             item_id=person_id,
             author_username=author_username,
@@ -242,7 +243,6 @@ class PeopleUseCase:
             changes=params.relationship_changes,
             author_username=author_username,
         )
-        now = datetime.now(tz=UTC)
         await self.item_service.update_item(
             item=item,
             params=KnowledgeItemUpdateParams(
@@ -250,7 +250,7 @@ class PeopleUseCase:
                 description=params.description,
             ),
             tag_ids=params.tag_ids,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         await self.people_storage.update_details(
             details=details,
@@ -269,14 +269,14 @@ class PeopleUseCase:
             author_username=author_username,
             values=params.relationship_changes.create,
             relationship_types=relationship_types_by_id,
-            created_at=now,
+            created_at=current_datetime,
         )
         await self.people_storage.update_relationships(
             person_id=person_id,
             author_username=author_username,
             values=params.relationship_changes.update,
             relationship_types=relationship_types_by_id,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         await self.people_storage.delete_relationships(
             relationship_ids=set(params.relationship_changes.delete_ids),
@@ -293,7 +293,7 @@ class PeopleUseCase:
             item_ids=touched_ids,
             author_username=author_username,
             kind=KnowledgeItemKind.PERSON,
-            updated_at=now,
+            updated_at=current_datetime,
         )
         return await self.get_person(person_id=person_id, author_username=author_username)
 
@@ -367,6 +367,7 @@ class PeopleUseCase:
         *,
         person_id: str,
         author_username: str,
+        current_datetime: datetime,
     ) -> tuple[str, ...]:
         await self.item_service.get_item(
             item_id=person_id,
@@ -390,18 +391,17 @@ class PeopleUseCase:
             author_username=author_username,
             kind=KnowledgeItemKind.PERSON,
         )
-        updated_at = datetime.now(tz=UTC)
         await self.item_storage.touch_items(
             item_ids=related_ids,
             author_username=author_username,
             kind=KnowledgeItemKind.PERSON,
-            updated_at=updated_at,
+            updated_at=current_datetime,
         )
         await self.item_storage.touch_items(
             item_ids=set(related_date_ids),
             author_username=author_username,
             kind=KnowledgeItemKind.DATE,
-            updated_at=updated_at,
+            updated_at=current_datetime,
         )
         return tuple(file.relative_path for file in files)
 
@@ -421,6 +421,7 @@ class PersonRelationshipTypesUseCase:
         self,
         *,
         params: PersonRelationshipTypeCreateParams,
+        current_datetime: datetime,
     ) -> PersonRelationshipType:
         reverse_name = params.forward_name if params.is_symmetric else params.reverse_name
         normalized_params = PersonRelationshipTypeCreateParams(
@@ -435,8 +436,8 @@ class PersonRelationshipTypesUseCase:
             is_symmetric=params.is_symmetric,
             forward_name=params.forward_name,
             reverse_name=reverse_name,
-            created_at=datetime.now(tz=UTC),
-            updated_at=datetime.now(tz=UTC),
+            created_at=current_datetime,
+            updated_at=current_datetime,
         )
         return await self.storage.create_relationship_type(params=normalized_params)
 
@@ -446,6 +447,7 @@ class PersonRelationshipTypesUseCase:
         relationship_type_id: str,
         params: PersonRelationshipTypeUpdateParams,
         author_username: str,
+        current_datetime: datetime,
     ) -> PersonRelationshipType:
         relationship_type = await self.storage.get_relationship_type(
             relationship_type_id=relationship_type_id,
@@ -464,12 +466,12 @@ class PersonRelationshipTypesUseCase:
             forward_name=params.forward_name,
             reverse_name=reverse_name,
             created_at=relationship_type.created_at,
-            updated_at=datetime.now(tz=UTC),
+            updated_at=current_datetime,
         )
         return await self.storage.update_relationship_type(
             relationship_type=relationship_type,
             params=normalized_params,
-            updated_at=datetime.now(tz=UTC),
+            updated_at=current_datetime,
         )
 
     async def delete_relationship_type(

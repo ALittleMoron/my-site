@@ -1140,14 +1140,20 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             ],
         )
 
-    async def get_queued_question(self, question_id: str) -> QueuedCompetencyMatrixQuestion:
-        question = await self._get_queued_question_model(question_id=question_id)
-        return question.to_domain_schema(claim=None)
-
-    async def get_queued_question_for_update(
+    async def get_queued_question(
         self,
         question_id: str,
+        *,
+        lock: bool,
     ) -> QueuedCompetencyMatrixQuestion:
+        if lock:
+            locked_question_id = await self.session.scalar(
+                select(QueuedQuestionModel.id)
+                .where(QueuedQuestionModel.id == question_id)
+                .with_for_update(of=QueuedQuestionModel),
+            )
+            if locked_question_id is None:
+                raise QueuedCompetencyMatrixQuestionNotFoundError
         stmt = (
             select(QueuedQuestionModel, MatrixQuestionClaimModel, AgentClientModel.name)
             .outerjoin(
@@ -1160,7 +1166,6 @@ class CompetencyMatrixDatabaseStorage(CompetencyMatrixStorage):
             )
             .where(QueuedQuestionModel.id == question_id)
             .options(*self._queued_question_domain_load_options())
-            .with_for_update(of=QueuedQuestionModel)
         )
         row = (await self.session.execute(stmt)).one_or_none()
         if row is None:

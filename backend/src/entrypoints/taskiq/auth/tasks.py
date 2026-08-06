@@ -2,7 +2,7 @@ from datetime import datetime
 
 from dishka.integrations.taskiq import FromDishka, inject
 
-from core.auth.schemas import AuthSessionCleanupParams
+from core.auth.schemas import AuthSessionCleanupParams, AuthSessionCleanupPolicy
 from core.auth.use_cases import AuthSessionCleanupUseCase
 from entrypoints.taskiq.broker import broker
 from infra.config.constants import constants
@@ -22,9 +22,11 @@ from infra.config.settings import settings
 async def prune_expired_auth_sessions(
     use_case: FromDishka[AuthSessionCleanupUseCase],
     current_datetime: FromDishka[datetime],
+    policy: FromDishka[AuthSessionCleanupPolicy],
 ) -> dict[str, int]:
     return (
         await use_case.prune_expired_sessions(
+            policy=policy,
             params=AuthSessionCleanupParams(current_datetime=current_datetime),
         )
     ).as_dict()

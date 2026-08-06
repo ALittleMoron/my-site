@@ -6,9 +6,11 @@ from litestar.middleware import DefineMiddleware
 
 from core.agent_access.enums import AgentActionEnum, AgentScopeEnum
 from core.agent_access.schemas import (
+    AgentCertificatePolicy,
     AgentCertificateRotationConfirmParams,
     AgentCertificateRotationParams,
     AgentIdentity,
+    MatrixAgentPolicy,
 )
 from core.agent_access.use_cases import AgentCertificateRotationUseCase, MatrixAgentUseCase
 from core.competency_matrix.schemas import CompetencyMatrixResourceSearchParams
@@ -65,11 +67,13 @@ class AgentApiController(Controller):
         identity: NamedDependency[AgentIdentity],
         metadata: NamedDependency[AgentRequestMetadata],
         use_case: FromDishka[MatrixAgentUseCase],
+        policy: FromDishka[MatrixAgentPolicy],
     ) -> MatrixQuestionClaimResponseSchema:
         claim = await use_case.claim_next_matrix_question(
             identity=identity,
             claimed_at=metadata.requested_at,
             input_digest=metadata.input_digest,
+            policy=policy,
         )
         return MatrixQuestionClaimResponseSchema.from_domain_schema(schema=claim)
 
@@ -92,12 +96,14 @@ class AgentApiController(Controller):
         identity: NamedDependency[AgentIdentity],
         metadata: NamedDependency[AgentRequestMetadata],
         use_case: FromDishka[MatrixAgentUseCase],
+        policy: FromDishka[MatrixAgentPolicy],
     ) -> MatrixAuthoringContextResponseSchema:
         context = await use_case.get_matrix_authoring_context(
             identity=identity,
             request_id=metadata.request_id,
             input_digest=metadata.input_digest,
             requested_at=metadata.requested_at,
+            policy=policy,
         )
         return MatrixAuthoringContextResponseSchema.from_domain_schema(schema=context)
 
@@ -146,18 +152,20 @@ class AgentApiController(Controller):
             "agent_identity_mode": "business",
         },
     )
-    async def save_matrix_question_draft(
+    async def save_matrix_question_draft(  # noqa: PLR0913
         self,
         claim_id: AgentClaimIdPath,
         data: MatrixQuestionDraftSaveRequestSchema,
         identity: NamedDependency[AgentIdentity],
         metadata: NamedDependency[AgentRequestMetadata],
         use_case: FromDishka[MatrixAgentUseCase],
+        policy: FromDishka[MatrixAgentPolicy],
     ) -> MatrixQuestionDraftSaveResponseSchema:
         result = await use_case.save_matrix_question_draft(
             identity=identity,
             params=data.to_domain_schema(claim_id=claim_id),
             completed_at=metadata.requested_at,
+            policy=policy,
         )
         return MatrixQuestionDraftSaveResponseSchema.from_domain_schema(schema=result)
 
@@ -210,8 +218,9 @@ class AgentApiController(Controller):
         identity: NamedDependency[AgentIdentity],
         params: NamedDependency[AgentCertificateRotationParams],
         use_case: FromDishka[AgentCertificateRotationUseCase],
+        policy: FromDishka[AgentCertificatePolicy],
     ) -> AgentCertificateRotationResponseSchema:
-        result = await use_case.rotate(identity=identity, params=params)
+        result = await use_case.rotate(identity=identity, params=params, policy=policy)
         return AgentCertificateRotationResponseSchema.from_domain_schema(schema=result)
 
     @post(

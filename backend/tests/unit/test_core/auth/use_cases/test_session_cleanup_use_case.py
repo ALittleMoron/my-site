@@ -19,12 +19,12 @@ class TestAuthSessionCleanupUseCase(TestCase):
         self.current_datetime = current_datetime
         self.expiring_soon_at = current_datetime + timedelta(days=7)
         self.auth_session_storage = Mock(spec=AuthSessionStorage)
+        self.policy = AuthSessionCleanupPolicy(
+            expiring_soon_days=7,
+            scheduled_prune_interval_seconds=86_400,
+        )
         self.use_case = AuthSessionCleanupUseCase(
             auth_session_storage=self.auth_session_storage,
-            policy=AuthSessionCleanupPolicy(
-                expiring_soon_days=7,
-                scheduled_prune_interval_seconds=86_400,
-            ),
         )
 
     async def test_get_cleanup_status_counts_expired_and_expiring_soon_sessions(self) -> None:
@@ -34,6 +34,7 @@ class TestAuthSessionCleanupUseCase(TestCase):
         )
 
         result = await self.use_case.get_cleanup_status(
+            policy=self.policy,
             params=AuthSessionCleanupParams(current_datetime=self.current_datetime),
         )
 
@@ -56,6 +57,7 @@ class TestAuthSessionCleanupUseCase(TestCase):
         )
 
         result = await self.use_case.prune_expired_sessions(
+            policy=self.policy,
             params=AuthSessionCleanupParams(current_datetime=self.current_datetime),
         )
 

@@ -5,7 +5,7 @@ import pytest_asyncio
 from core.auth.event_dispatchers import AuthEventReporter
 from core.auth.exceptions import UnauthorizedError
 from core.auth.generators import AuthSessionSecretGenerator
-from core.auth.schemas import AuthLogoutParams, AuthUseCaseConfig
+from core.auth.schemas import AuthLogoutParams
 from core.auth.storages import AuthSessionStorage, TokenRevocationStorage
 from core.auth.types import Token
 from core.auth.use_cases import AuthUseCase
@@ -28,11 +28,6 @@ class TestLogoutUseCase(ContainerTestCase):
             user_storage=await self.container.get_user_storage(),
             event_reporter=self.auth_event_reporter,
             auth_session_secret_generator=AuthSessionSecretGenerator(byte_count=32),
-            config=AuthUseCaseConfig(
-                access_token_expires_in_seconds=900,
-                session_expires_in_seconds=2_592_000,
-                session_absolute_expires_in_seconds=2_592_000,
-            ),
         )
 
     async def test_logout_revokes_valid_token_until_it_expires(self) -> None:

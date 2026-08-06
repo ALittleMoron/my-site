@@ -83,7 +83,7 @@ class KnowledgeFilesProvider(Provider):
             client=client,
             photo_processor=photo_processor,
             file_name_generator=file_name_generator,
-            rules=KnowledgeFileRules(
+            config=KnowledgeFileRules(
                 values={
                     KnowledgeFileKind.ATTACHMENT: KnowledgeFileRule(
                         folder=constants.knowledge_files.attachment_folder,

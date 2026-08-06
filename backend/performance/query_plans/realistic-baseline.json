@@ -217,6 +217,7 @@
     "matrix_queue_delete__002": 0.0345,
     "matrix_queue_detail_by_id__001": 0.0115,
     "matrix_queue_detail_for_update__001": 0.025500000000000002,
+    "matrix_queue_detail_for_update__002": 0.021,
     "matrix_queue_list_fifo__001": 0.9769999999999999,
     "matrix_queue_list_fifo_with_agent_claims__001": 1.3245,
     "matrix_resources_by_ids__001": 0.0205,

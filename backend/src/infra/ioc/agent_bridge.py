@@ -23,9 +23,15 @@ from infra.http.agent_api import AgentApiHttpClient
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AutomaticAgentCredentialRotationRuntime:
+    use_case: AutomaticAgentCredentialRotationUseCase
+    policy: LocalAgentCredentialRotationPolicy
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class AgentBridgeRuntime:
     server: AgentBridgeServer
-    automatic_rotation: AutomaticAgentCredentialRotationUseCase | None
+    automatic_rotation: AutomaticAgentCredentialRotationRuntime | None
 
 
 def compose_agent_bridge_runtime(
@@ -55,10 +61,12 @@ def compose_agent_bridge_runtime(
     bridge_use_case = AgentBridgeUseCase(client=client)
     automatic_rotation = None
     if isinstance(credential_provider, DesktopAgentCredentialStore):
-        automatic_rotation = AutomaticAgentCredentialRotationUseCase(
-            storage=credential_provider,
-            client=client,
-            id_generator=HexUuidIdGenerator(generator=generate_uuid4_hex),
+        automatic_rotation = AutomaticAgentCredentialRotationRuntime(
+            use_case=AutomaticAgentCredentialRotationUseCase(
+                storage=credential_provider,
+                client=client,
+                id_generator=HexUuidIdGenerator(generator=generate_uuid4_hex),
+            ),
             policy=LocalAgentCredentialRotationPolicy(
                 rotation_window_seconds=(
                     constants.agent_access.certificate_rotation_window_seconds

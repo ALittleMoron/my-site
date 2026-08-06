@@ -6,6 +6,7 @@ import pytest
 from core.articles.enums import ArticleReactionKind, ArticleViewSourceCategory
 from core.articles.exceptions import ArticleNotFoundError
 from core.articles.schemas import (
+    ArticleAnalyticsConfig,
     ArticleAnalyticsDailyStats,
     ArticlePublicStatsCollection,
     ArticleReactionCounts,
@@ -26,9 +27,11 @@ class TestArticleAnalyticsUseCase(TestCase):
         self.use_case = ArticleAnalyticsUseCase(
             articles_storage=self.articles_storage,
             analytics_storage=self.analytics_storage,
+            error_reporter=self.error_reporter,
+        )
+        self.config = ArticleAnalyticsConfig(
             reaction_secret=Secret("reaction-secret"),
             app_domain="example.com",
-            error_reporter=self.error_reporter,
         )
 
     async def test_track_view_delegates_published_article(self) -> None:
@@ -70,6 +73,7 @@ class TestArticleAnalyticsUseCase(TestCase):
         await self.use_case.track_public_view(
             article=article,
             referrer="https://www.google.com/search?q=typed",
+            config=self.config,
         )
 
         self.analytics_storage.increment_view.assert_called_once_with(
@@ -86,7 +90,11 @@ class TestArticleAnalyticsUseCase(TestCase):
         error = RuntimeError("db is down")
         self.analytics_storage.increment_view.side_effect = error
 
-        await self.use_case.track_public_view(article=article, referrer=None)
+        await self.use_case.track_public_view(
+            article=article,
+            referrer=None,
+            config=self.config,
+        )
 
         self.error_reporter.report_public_view_tracking_failure.assert_called_once_with(
             article=article,
@@ -121,11 +129,13 @@ class TestArticleAnalyticsUseCase(TestCase):
             slug="first",
             client_token="same-client-token",  # noqa: S106
             reaction_kind=ArticleReactionKind.HEART,
+            config=self.config,
         )
         await self.use_case.set_reaction(
             slug="second",
             client_token="same-client-token",  # noqa: S106
             reaction_kind=ArticleReactionKind.HEART,
+            config=self.config,
         )
 
         first_call, second_call = self.analytics_storage.set_reaction.call_args_list

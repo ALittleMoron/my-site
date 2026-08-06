@@ -25,6 +25,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
         self.authentication_use_case = await self.container.get_auth_use_case()
         self.articles_use_case = await self.container.get_articles_use_case()
         self.analytics_use_case = await self.container.get_article_analytics_use_case()
+        self.config = await self.container.get_article_analytics_config()
 
     def test_track_public_view(self) -> None:
         article = self.factory.core.article(
@@ -44,6 +45,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
         self.analytics_use_case.track_public_view.assert_called_once_with(
             article=article,
             referrer=None,
+            config=self.config,
         )
 
     def test_moderator_public_view_is_not_tracked(self) -> None:
@@ -89,6 +91,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
             slug="public-article",
             client_token="client-token",  # noqa: S106
             reaction_kind=ArticleReactionKind.HEART,
+            config=self.config,
         )
 
     def test_clear_reaction(self) -> None:
@@ -102,6 +105,7 @@ class TestArticleAnalyticsAPI(ApiTestCase):
             slug="public-article",
             client_token="client-token",  # noqa: S106
             reaction_kind=None,
+            config=self.config,
         )
 
     def test_get_public_stats(self) -> None:

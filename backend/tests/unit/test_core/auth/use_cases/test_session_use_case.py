@@ -64,6 +64,11 @@ class TestAuthSessionUseCase(TestCase):
             auth_method=AuthSessionAuthMethodEnum.PASSWORD,
             client_metadata=auth_session_client(),
         )
+        self.config = AuthUseCaseConfig(
+            access_token_expires_in_seconds=900,
+            session_expires_in_seconds=2_592_000,
+            session_absolute_expires_in_seconds=2_592_000,
+        )
         self.use_case = AuthUseCase(
             hasher=self.hasher,
             token_handler=self.token_handler,
@@ -73,16 +78,16 @@ class TestAuthSessionUseCase(TestCase):
             user_storage=self.user_storage,
             event_reporter=self.event_reporter,
             auth_session_secret_generator=self.session_secret_generator,
-            config=AuthUseCaseConfig(
-                access_token_expires_in_seconds=900,
-                session_expires_in_seconds=2_592_000,
-                session_absolute_expires_in_seconds=2_592_000,
-            ),
         )
 
     async def test_login_uses_shorter_absolute_lifetime_when_it_is_less_than_idle_lifetime(
         self,
     ) -> None:
+        config = AuthUseCaseConfig(
+            access_token_expires_in_seconds=900,
+            session_expires_in_seconds=2_592_000,
+            session_absolute_expires_in_seconds=60,
+        )
         use_case = AuthUseCase(
             hasher=self.hasher,
             token_handler=self.token_handler,
@@ -92,11 +97,6 @@ class TestAuthSessionUseCase(TestCase):
             user_storage=self.user_storage,
             event_reporter=self.event_reporter,
             auth_session_secret_generator=self.session_secret_generator,
-            config=AuthUseCaseConfig(
-                access_token_expires_in_seconds=900,
-                session_expires_in_seconds=2_592_000,
-                session_absolute_expires_in_seconds=60,
-            ),
         )
         self.hasher.verify_password.return_value = (True, False)
         self.token_handler.encode_token.return_value = Token(b"ACCESS")
@@ -107,6 +107,7 @@ class TestAuthSessionUseCase(TestCase):
         )
 
         result = await use_case.login(
+            config=config,
             params=AuthLoginParams(
                 username="admin",
                 password="password",
@@ -149,6 +150,7 @@ class TestAuthSessionUseCase(TestCase):
         )
 
         result = await self.use_case.login(
+            config=self.config,
             params=AuthLoginParams(
                 username="admin",
                 password="password",
@@ -196,6 +198,7 @@ class TestAuthSessionUseCase(TestCase):
 
         with pytest.raises(UnauthorizedError):
             await self.use_case.refresh_access_token(
+                config=self.config,
                 params=AuthRefreshAccessTokenParams(
                     session_secret=SessionSecret("session-secret"),
                     required_role=RoleEnum.MODERATOR,
@@ -215,6 +218,7 @@ class TestAuthSessionUseCase(TestCase):
 
         with pytest.raises(UnauthorizedError):
             await self.use_case.refresh_access_token(
+                config=self.config,
                 params=AuthRefreshAccessTokenParams(
                     session_secret=SessionSecret("session-secret"),
                     required_role=RoleEnum.MODERATOR,
@@ -235,6 +239,7 @@ class TestAuthSessionUseCase(TestCase):
 
         with pytest.raises(UnauthorizedError):
             await self.use_case.refresh_access_token(
+                config=self.config,
                 params=AuthRefreshAccessTokenParams(
                     session_secret=SessionSecret("session-secret"),
                     required_role=RoleEnum.MODERATOR,
@@ -260,6 +265,7 @@ class TestAuthSessionUseCase(TestCase):
 
         with pytest.raises(ForbiddenError):
             await self.use_case.refresh_access_token(
+                config=self.config,
                 params=AuthRefreshAccessTokenParams(
                     session_secret=SessionSecret("session-secret"),
                     required_role=RoleEnum.MODERATOR,
@@ -280,6 +286,7 @@ class TestAuthSessionUseCase(TestCase):
 
         with pytest.raises(UnauthorizedError):
             await self.use_case.refresh_access_token(
+                config=self.config,
                 params=AuthRefreshAccessTokenParams(
                     session_secret=SessionSecret("session-secret"),
                     required_role=RoleEnum.MODERATOR,
@@ -305,6 +312,7 @@ class TestAuthSessionUseCase(TestCase):
 
         with pytest.raises(UnauthorizedError):
             await self.use_case.refresh_access_token(
+                config=self.config,
                 params=AuthRefreshAccessTokenParams(
                     session_secret=SessionSecret("session-secret"),
                     required_role=RoleEnum.MODERATOR,
@@ -331,6 +339,7 @@ class TestAuthSessionUseCase(TestCase):
         self.token_handler.encode_token.return_value = Token(b"NEW_ACCESS")
 
         result = await self.use_case.refresh_access_token(
+            config=self.config,
             params=AuthRefreshAccessTokenParams(
                 session_secret=SessionSecret("session-secret"),
                 required_role=RoleEnum.MODERATOR,
@@ -376,6 +385,7 @@ class TestAuthSessionUseCase(TestCase):
         self.token_handler.encode_token.return_value = Token(b"NEW_ACCESS")
 
         result = await self.use_case.refresh_access_token(
+            config=self.config,
             params=AuthRefreshAccessTokenParams(
                 session_secret=SessionSecret("session-secret"),
                 required_role=RoleEnum.MODERATOR,
@@ -412,6 +422,7 @@ class TestAuthSessionUseCase(TestCase):
 
         with pytest.raises(UnauthorizedError):
             await self.use_case.refresh_access_token(
+                config=self.config,
                 params=AuthRefreshAccessTokenParams(
                     session_secret=SessionSecret("session-secret"),
                     required_role=RoleEnum.MODERATOR,

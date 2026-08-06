@@ -19,7 +19,6 @@ from core.agent_access.exceptions import (
 )
 from core.agent_access.schemas import (
     AgentAuditEventCreateParams,
-    AgentAuditPolicy,
     AgentCertificate,
     AgentCertificateIssueParams,
     AgentCertificatePolicy,
@@ -235,15 +234,15 @@ class TestAgentCertificateRotationUseCase(TestCase):
         self.issuer.get_certificate_chain_pem.return_value = (
             "-----BEGIN CERTIFICATE-----\nchain\n-----END CERTIFICATE-----"
         )
+        self.policy = AgentCertificatePolicy(
+            lifetime_seconds=7_776_000,
+            rotation_window_seconds=1_209_600,
+            normal_access_overlap_seconds=900,
+        )
         self.use_case = AgentCertificateRotationUseCase(
             storage=self.storage,
             certificate_issuer=self.issuer,
             id_generator=self.id_generator,
-            policy=AgentCertificatePolicy(
-                lifetime_seconds=7_776_000,
-                rotation_window_seconds=1_209_600,
-                normal_access_overlap_seconds=900,
-            ),
         )
 
     async def test_rotate_issues_certificate_for_authenticated_agent_identity(self) -> None:
@@ -266,6 +265,7 @@ class TestAgentCertificateRotationUseCase(TestCase):
                 ),
                 rotated_at=NOW,
             ),
+            policy=self.policy,
         )
 
         certificate = self.storage.create_certificate_rotation.await_args.kwargs["replacement"]
@@ -329,6 +329,7 @@ class TestAgentCertificateRotationUseCase(TestCase):
                     ),
                     rotated_at=NOW,
                 ),
+                policy=self.policy,
             )
 
         self.issuer.issue.assert_not_called()
@@ -345,19 +346,15 @@ class TestAgentAdminUseCase(TestCase):
             self.factory.core.hex_id(10),
             self.factory.core.hex_id(11),
         ]
+        self.certificate_policy = AgentCertificatePolicy(
+            lifetime_seconds=7_776_000,
+            rotation_window_seconds=1_209_600,
+            normal_access_overlap_seconds=900,
+        )
         self.use_case = AgentAdminUseCase(
             storage=self.storage,
             certificate_issuer=self.issuer,
             id_generator=self.id_generator,
-            certificate_policy=AgentCertificatePolicy(
-                lifetime_seconds=7_776_000,
-                rotation_window_seconds=1_209_600,
-                normal_access_overlap_seconds=900,
-            ),
-            audit_policy=AgentAuditPolicy(
-                page_size_max=100,
-                retention_seconds=31_536_000,
-            ),
         )
         self.storage.client_name_exists.return_value = False
 
@@ -385,7 +382,10 @@ class TestAgentAdminUseCase(TestCase):
             registered_at=NOW,
         )
 
-        result = await self.use_case.register_client(params=params)
+        result = await self.use_case.register_client(
+            params=params,
+            policy=self.certificate_policy,
+        )
 
         assert result == AgentClientRegistrationResult(
             client=self.storage.create_client.await_args.kwargs["client"],
@@ -423,15 +423,15 @@ class TestMatrixAgentUseCase(TestCase):
             self.factory.core.hex_id(6),
             self.factory.core.hex_id(7),
         ]
+        self.policy = MatrixAgentPolicy(
+            claim_ttl_seconds=7200,
+            minimum_resource_count=1,
+            maximum_resource_count=3,
+        )
         self.use_case = MatrixAgentUseCase(
             storage=self.storage,
             matrix_storage=self.matrix_storage,
             id_generator=self.id_generator,
-            policy=MatrixAgentPolicy(
-                claim_ttl_seconds=7200,
-                minimum_resource_count=1,
-                maximum_resource_count=3,
-            ),
         )
         self.identity = AgentIdentity(
             agent_client_id=self.factory.core.hex_id(1),
@@ -497,6 +497,7 @@ class TestMatrixAgentUseCase(TestCase):
             request_id="request-1",
             input_digest=INPUT_DIGEST,
             requested_at=NOW,
+            policy=self.policy,
         )
 
         assert context == MatrixAuthoringContext(
@@ -564,6 +565,7 @@ class TestMatrixAgentUseCase(TestCase):
             identity=self.identity,
             claimed_at=NOW,
             input_digest=INPUT_DIGEST,
+            policy=self.policy,
         )
 
         assert result == self.claim
@@ -597,6 +599,7 @@ class TestMatrixAgentUseCase(TestCase):
                 identity=identity,
                 claimed_at=NOW,
                 input_digest=INPUT_DIGEST,
+                policy=self.policy,
             )
 
         self.storage.claim_next_matrix_question.assert_not_awaited()
@@ -635,6 +638,7 @@ class TestMatrixAgentUseCase(TestCase):
             identity=self.identity,
             params=self.params,
             completed_at=NOW,
+            policy=self.policy,
         )
 
         assert result == expected
@@ -664,6 +668,7 @@ class TestMatrixAgentUseCase(TestCase):
             identity=self.identity,
             params=self.params,
             completed_at=NOW,
+            policy=self.policy,
         )
 
         assert result == MatrixQuestionDraftSaveResult(
@@ -697,6 +702,7 @@ class TestMatrixAgentUseCase(TestCase):
                 identity=self.identity,
                 params=replace(self.params, resources=resources),
                 completed_at=NOW,
+                policy=self.policy,
             )
 
         self.storage.get_matrix_question_draft_completion.assert_not_awaited()
@@ -723,6 +729,7 @@ class TestMatrixAgentUseCase(TestCase):
                 identity=self.identity,
                 params=replace(self.params, resources=(resource,)),
                 completed_at=NOW,
+                policy=self.policy,
             )
 
         self.storage.get_matrix_question_draft_completion.assert_not_awaited()
@@ -735,6 +742,7 @@ class TestMatrixAgentUseCase(TestCase):
                 identity=self.identity,
                 params=self.params,
                 completed_at=NOW,
+                policy=self.policy,
             )
 
         self.storage.release_matrix_question_claim.assert_not_awaited()

@@ -16,6 +16,7 @@ from core.auth.schemas import (
     AuthRefreshAccessTokenResult,
     AuthSessionClientMetadata,
     AuthSessionCredentials,
+    AuthUseCaseConfig,
 )
 from core.auth.types import SessionSecret, Token
 from core.auth.use_cases import AuthUseCase
@@ -124,10 +125,12 @@ class AuthApiController(Controller):
             ),
         ],
         use_case: FromDishka[AuthUseCase],
+        config: FromDishka[AuthUseCaseConfig],
         current_datetime: FromDishka[datetime],
         client_metadata: FromDishka[AuthSessionClientMetadata],
     ) -> Response[AccessTokenResponseSchema]:
         result = await use_case.login(
+            config=config,
             params=AuthLoginParams(
                 username=data.username,
                 password=data.password,
@@ -148,10 +151,12 @@ class AuthApiController(Controller):
         self,
         request: Request,
         use_case: FromDishka[AuthUseCase],
+        config: FromDishka[AuthUseCaseConfig],
         current_datetime: FromDishka[datetime],
     ) -> Response[AccessTokenResponseSchema]:
         require_auth_cookie_csrf_guard(request)
         result = await use_case.refresh_access_token(
+            config=config,
             params=AuthRefreshAccessTokenParams(
                 session_secret=get_required_session_secret(request),
                 required_role=RoleEnum.MODERATOR,

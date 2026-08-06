@@ -188,13 +188,11 @@ class CompetencyMatrixStorage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_queued_question(self, question_id: str) -> QueuedCompetencyMatrixQuestion:
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_queued_question_for_update(
+    async def get_queued_question(
         self,
         question_id: str,
+        *,
+        lock: bool,
     ) -> QueuedCompetencyMatrixQuestion:
         raise NotImplementedError
 

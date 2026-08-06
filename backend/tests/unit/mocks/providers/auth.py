@@ -10,14 +10,17 @@ from core.auth.schemas import (
     AccessTokenResult,
     AuthLoginResult,
     AuthRefreshAccessTokenResult,
+    AuthSessionCleanupPolicy,
     AuthSessionClientMetadata,
     AuthSessionCredentials,
+    AuthUseCaseConfig,
     JwtUser,
 )
 from core.auth.storages import AuthSessionStorage, AuthStorage
 from core.auth.token_handlers import TokenHandler
 from core.auth.types import RawToken, SessionSecret, Token
 from core.auth.use_cases import AuthSessionCleanupUseCase, AuthUseCase
+from infra.config.constants import constants
 from infra.config.settings import Settings
 
 test_public_key_pem = """\
@@ -66,6 +69,23 @@ class MockAuthProvider(Provider):
             user_agent_browser="Firefox",
             user_agent_os="Linux",
             user_agent_device=AuthSessionDeviceTypeEnum.DESKTOP,
+        )
+
+    @provide(scope=Scope.APP)
+    async def provide_auth_use_case_config(self) -> AuthUseCaseConfig:
+        return AuthUseCaseConfig(
+            access_token_expires_in_seconds=self.settings.auth.token_expire_seconds,
+            session_expires_in_seconds=self.settings.auth.session_expire_seconds,
+            session_absolute_expires_in_seconds=self.settings.auth.session_absolute_expire_seconds,
+        )
+
+    @provide(scope=Scope.APP)
+    async def provide_auth_session_cleanup_policy(self) -> AuthSessionCleanupPolicy:
+        return AuthSessionCleanupPolicy(
+            expiring_soon_days=constants.auth.session_expiring_soon_days,
+            scheduled_prune_interval_seconds=(
+                self.settings.taskiq.auth_session_prune_interval_seconds
+            ),
         )
 
     @provide(scope=Scope.APP)

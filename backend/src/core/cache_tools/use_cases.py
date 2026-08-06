@@ -27,15 +27,14 @@ class CacheToolsUseCase:
     operation_storage: CacheWarmOperationStorage
     task_dispatcher: CacheWarmTaskDispatcher
     id_generator: HexUuidIdGenerator
-    policy: CacheToolsPolicy
 
-    async def get_status(self) -> CacheToolsStatus:
-        if self.policy.enabled:
+    async def get_status(self, *, policy: CacheToolsPolicy) -> CacheToolsStatus:
+        if policy.enabled:
             domain_statuses = tuple(
                 await asyncio.gather(
                     *(
                         self.response_cache_status_storage.get_domain_status(domain=domain)
-                        for domain in self.policy.domains
+                        for domain in policy.domains
                     ),
                 ),
             )
@@ -47,22 +46,22 @@ class CacheToolsUseCase:
                     minimum_remaining_ttl_seconds=None,
                     non_expiring_key_count=0,
                 )
-                for domain in self.policy.domains
+                for domain in policy.domains
             )
         return CacheToolsStatus(
-            enabled=self.policy.enabled,
-            configured_ttl_seconds=self.policy.configured_ttl_seconds,
-            scheduled_warm_interval_seconds=self.policy.scheduled_warm_interval_seconds,
+            enabled=policy.enabled,
+            configured_ttl_seconds=policy.configured_ttl_seconds,
+            scheduled_warm_interval_seconds=policy.scheduled_warm_interval_seconds,
             domains=domain_statuses,
             last_manual_warm_operation=await self.operation_storage.get_latest(),
         )
 
-    async def clear(self) -> CacheToolsStatus:
-        if self.policy.enabled:
+    async def clear(self, *, policy: CacheToolsPolicy) -> CacheToolsStatus:
+        if policy.enabled:
             await self.response_cache_invalidation_storage.clear_domains(
-                domains=self.policy.domains,
+                domains=policy.domains,
             )
-        return await self.get_status()
+        return await self.get_status(policy=policy)
 
     async def enqueue_manual_warm(self, *, current_datetime: datetime) -> CacheWarmOperation:
         operation = CacheWarmOperation(

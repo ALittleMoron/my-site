@@ -26,7 +26,7 @@ class KnowledgeFileCrudService:
     client: KnowledgeFileClient
     photo_processor: KnowledgePhotoProcessor
     file_name_generator: FileNameGenerator
-    rules: KnowledgeFileRules
+    config: KnowledgeFileRules
 
     async def create_file(
         self,
@@ -35,7 +35,7 @@ class KnowledgeFileCrudService:
         now: datetime,
         rollback_registrar: KnowledgeFileRollbackRegistrar,
     ) -> KnowledgeFile:
-        rule = self.rules.require(kind=params.kind)
+        rule = self.config.require(kind=params.kind)
         params.validate(rule=rule)
         content = params.content
         mime_type = params.mime_type
