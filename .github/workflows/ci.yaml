@@ -70,13 +70,6 @@ jobs:
       - frontend-security
     uses: ./.github/workflows/_frontend_tests.yaml
 
-  backend-performance-smoke:
-    name: "Backend performance smoke"
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-    needs:
-      - backend-tests
-    uses: ./.github/workflows/_backend_performance_smoke.yaml
-
   backend-query-plans:
     name: "Backend query plans"
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
@@ -105,7 +98,6 @@ jobs:
     name: "Dockerfile lint"
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
-      - backend-performance-smoke
       - backend-query-plans
       - frontend-ssr-smoke
       - frontend-lighthouse
@@ -115,7 +107,6 @@ jobs:
     name: "Trivy config scan"
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
-      - backend-performance-smoke
       - backend-query-plans
       - frontend-ssr-smoke
       - frontend-lighthouse
@@ -125,7 +116,6 @@ jobs:
     name: "Backend Docker image security"
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
-      - backend-performance-smoke
       - backend-query-plans
       - frontend-ssr-smoke
       - frontend-lighthouse
@@ -135,7 +125,6 @@ jobs:
     name: "Frontend Docker image security"
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
-      - backend-performance-smoke
       - backend-query-plans
       - frontend-ssr-smoke
       - frontend-lighthouse
@@ -145,7 +134,6 @@ jobs:
     name: "Nginx Docker image security"
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
-      - backend-performance-smoke
       - backend-query-plans
       - frontend-ssr-smoke
       - frontend-lighthouse
@@ -155,7 +143,6 @@ jobs:
     name: "Infrastructure security"
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     needs:
-      - backend-performance-smoke
       - backend-query-plans
       - frontend-ssr-smoke
       - frontend-lighthouse

@@ -1,15 +1,10 @@
 TEST_ENV_FILE ?= ../.env.test
 TEST_ENV_OVERRIDES ?=
-PERFORMANCE_ENV_FILE ?= ../.env.test
 QUERY_PLANS_ENV_FILE ?= ../.env.test
 
 .PHONY: install
 install:
 	bash scripts/install.sh install
-
-.PHONY: install-performance
-install-performance:
-	bash scripts/install.sh install-performance
 
 .PHONY: run
 run:
@@ -131,18 +126,6 @@ tests-coverage:
 .PHONY: quality
 quality:
 	bash scripts/quality.sh quality "$(TEST_ENV_FILE)" "$(TEST_ENV_OVERRIDES)"
-
-.PHONY: performance-smoke
-performance-smoke:
-	bash scripts/run_locust.sh smoke "$(PERFORMANCE_ENV_FILE)"
-
-.PHONY: performance-baseline
-performance-baseline:
-	bash scripts/run_locust.sh baseline "$(PERFORMANCE_ENV_FILE)"
-
-.PHONY: performance-report-clean
-performance-report-clean:
-	bash scripts/run_locust.sh clean "$(PERFORMANCE_ENV_FILE)"
 
 .PHONY: query-plans-realistic
 query-plans-realistic:

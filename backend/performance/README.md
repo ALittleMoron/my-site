@@ -1,39 +1,27 @@
 # Performance Testing
 
-This directory contains backend performance tooling for public site behavior and PostgreSQL storage
-query plans. Frontend Lighthouse quality and performance gates live under `frontend/lighthouse/`
-and run through Lighthouse CI.
+This directory contains deterministic PostgreSQL storage query-plan tooling. Frontend Lighthouse
+quality and performance gates live under `frontend/lighthouse/` and run through Lighthouse CI.
 
 ## Layout
 
-- `locust/`: HTTP load-test scenario, response validation, and Locust thresholds.
 - `query_plans/`: deterministic PostgreSQL seed data, public storage method discovery, real
   SQLAlchemy runtime SQL capture, EXPLAIN runner, thresholds, and report rendering.
-- `reports/`: generated Locust and query-plan reports.
+- `reports/`: generated query-plan reports.
 - `../scripts/`: shell entrypoints used by Make targets.
 
-## Local Runs
+## Public API Smoke Coverage
 
-Local Make targets default to `../.env.test`. They prepare backend dependencies, start or reuse the
-test PostgreSQL service, start a local backend when `PERFORMANCE_HOST` points to localhost, seed
-deterministic public content when `PERFORMANCE_SEED_DATA=true`, and clean up only
-services/processes they started. For staging or production-like targets, pass an explicit
-`PERFORMANCE_ENV_FILE`.
+Deterministic public read-path coverage lives in the backend integration test suite. It exercises
+the real Litestar routes, middleware, Dishka providers, response schemas, and PostgreSQL storages
+with seeded published content:
 
 ```bash
-make performance-smoke
-make performance-baseline
-make performance-smoke PERFORMANCE_ENV_FILE=../.env
+make test-backend-integration
 ```
 
-Reports are written to `backend/performance/reports/locust/<timestamp>/` by default:
-
-- `locust-report.html`
-- `locust_stats.csv`
-- `locust_failures.csv`
-- `locust_exceptions.csv`
-- `locust_stats_history.csv`
-- `backend.log` when the target local backend is started by the performance script
+This is a functional wiring and contract check. It intentionally does not impose HTTP throughput or
+latency thresholds.
 
 ## Lighthouse CI
 
@@ -128,48 +116,16 @@ Reports are written to `backend/performance/reports/query-plans/<timestamp>/`:
 coverage, scenario-to-method metadata, captured SQL counts, warm median EXPLAIN timings, SLA,
 baseline, effective threshold, overrun flag, and separate blocking findings and observations.
 
-## Profiles
-
-- `performance-smoke` is short and suitable for CI. It is meant to catch obvious latency or error regressions, not to establish production capacity.
-- `performance-baseline` is longer. With `../.env.test`, it measures the local backend against the
-  seeded test database; with staging or production-like targets, pass an explicit
-  `PERFORMANCE_ENV_FILE` and set `PERFORMANCE_SEED_DATA=false`.
-
-The checked-in local Locust thresholds are based on a seeded `performance-baseline` run from
-2026-06-06 with 15,169 requests, 0 failures, aggregated average 8.9 ms, and aggregated p95 17 ms.
-The resulting guard thresholds are `LOCUST_MAX_FAILURE_RATIO=0.0`,
-`LOCUST_MAX_AVG_RESPONSE_MS=50`, and `LOCUST_MAX_P95_RESPONSE_MS=75`.
-
 ## Useful Environment Values
 
-- `PERFORMANCE_HOST`: target base URL.
 - `PERFORMANCE_REPORT_DIR`: report output directory, relative to `backend/` when using Make.
-- `PERFORMANCE_LANGUAGE`: UI/content language for localized API calls.
-- `PERFORMANCE_INCLUDE_SPA`: set to `true` when the target serves the Angular SPA as well as `/api/*`.
-- `PERFORMANCE_INCLUDE_MATRIX_SUGGESTIONS`: set to `true` only for targeted mutation runs that
-  should exercise `POST /api/competency-matrix/question-suggestions`; the default test env keeps it
-  `false` so smoke/baseline runs remain read-heavy and do not spend the daily suggestion quota.
-- `PERFORMANCE_VALIDATE_RESPONSES`: set to `true` to validate selected API responses with backend Pydantic response schemas.
-- `PERFORMANCE_SEED_DATA`: set to `true` only for local test-database runs. It seeds published
-  articles, article detail content, tags, analytics, reactions, matrix sheets, matrix detail items, and
-  resources before Locust starts. Seeded slugs and matrix sheet keys use the `perf-seed-*` prefix so
-  local runs can coexist with other test datasets; seeded matrix discovery is restricted to that
-  prefix so unrelated query-plan or developer data cannot distort the load profile. The seed runner
-  rejects remote targets, remote databases, and database names that do not contain `test`.
-- `PERFORMANCE_USERS`, `PERFORMANCE_SPAWN_RATE`, `PERFORMANCE_RUN_TIME`: smoke profile shape.
-- `PERFORMANCE_BASELINE_USERS`, `PERFORMANCE_BASELINE_SPAWN_RATE`, `PERFORMANCE_BASELINE_RUN_TIME`: baseline profile shape.
-- `LOCUST_MAX_FAILURE_RATIO`, `LOCUST_MAX_AVG_RESPONSE_MS`, `LOCUST_MAX_P95_RESPONSE_MS`: soft-gate thresholds.
 
 ## Additional Details
 
-The Make targets prepare the backend uv environment, run Locust, and write timestamped HTML/CSV
-artifacts, matching Locust's documented CI and CSV-report workflow. For heavier load, Locust can
-run distributed with master/worker processes. Lighthouse CI covers frontend quality and lab
-performance gates separately from backend load and SQL-plan checks.
+The query-plan Make targets prepare the backend uv environment and test PostgreSQL, then write
+timestamped reports. Lighthouse CI covers frontend quality and lab performance separately from
+backend SQL-plan checks.
 
 References:
 
-- https://docs.locust.io/en/stable/running-without-web-ui.html
-- https://docs.locust.io/en/stable/retrieving-stats.html
-- https://docs.locust.io/en/stable/running-distributed.html
 - https://web.dev/articles/lighthouse-ci

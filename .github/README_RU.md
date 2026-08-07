@@ -9,7 +9,7 @@
 | База данных | ![postgresql](./badges/postgresql.svg) ![sqlalchemy](./badges/sqlalchemy.svg) ![alembic](./badges/alembic.svg) |
 | Кэш | ![valkey](./badges/valkey.svg) |
 | Frontend | ![angular](./badges/angular.svg) ![typescript](./badges/typescript.svg) ![bootstrap](./badges/bootstrap.svg) |
-| Тестирование | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) ![locust](./badges/locust.svg) ![lhci](./badges/lhci.svg) |
+| Тестирование | ![pytest](./badges/pytest.svg) ![jest](./badges/jest.svg) ![lhci](./badges/lhci.svg) |
 | DevOps | ![docker](./badges/docker.svg) ![nginx](./badges/nginx.svg) ![minio](./badges/minio.svg) ![docker-compose](./badges/docker-compose.svg) |
 | Качество | ![ruff](./badges/ruff.svg) ![mypy](./badges/mypy.svg) ![bandit](./badges/bandit.svg) ![pip-audit](./badges/pip-audit.svg) ![trivy](./badges/trivy.svg) ![hadolint](./badges/hadolint.svg) ![dockle](./badges/dockle.svg) ![vulture](./badges/vulture.svg) ![eslint](./badges/eslint.svg) ![prettier](./badges/prettier.svg) |
 | Логирование | ![structlog](./badges/structlog.svg) ![ecs-logging](./badges/ecs-logging.svg) ![sentry](./badges/sentry.svg) |
@@ -38,7 +38,7 @@ my-site/
 ├── backend/        # Litestar API + доменная логика
 │   ├── src/        # Исходный код приложения
 │   ├── tests/      # Backend-тесты (pytest)
-│   └── performance/ # сценарии нагрузочного тестирования Locust и отчёты
+│   └── performance/ # сценарии и отчёты проверки планов PostgreSQL
 ├── .env.example    # Пример переменных окружения
 ├── .env.test       # Безопасные переменные для тестового окружения
 ├── docker-compose.test.yml
@@ -165,7 +165,6 @@ make tests-coverage             # отчёт покрытия backend
 make tests-coverage-frontend    # отчёт покрытия frontend
 make test-frontend              # только frontend (jest)
 make -C frontend ssr-smoke      # production SSR build + smoke HTML публичной статьи, обновлений, case-study и вопроса матрицы
-make performance-smoke          # автоматический local backend + seed-данные + короткий Locust smoke-профиль
 make performance-lighthouse     # production Angular SSR build + strict Lighthouse CI quality/performance gates
 make query-plans-realistic      # обязательный main gate: реалистичные данные, планы + latency
 make query-plans-stress         # ручной большой профиль: строгие планы, latency как observation

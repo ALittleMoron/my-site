@@ -128,7 +128,7 @@ Portfolio and articles site with a knowledge database
   `make -C backend types`, `make -C backend format-check`, `make -C backend ruff-lint-check`,
   `make -C backend lint-check`, `make -C backend bandit`, `make -C backend security-bandit`,
   `make -C backend security-pip-audit`, `make -C backend vulture`, `make -C backend security`,
-  `make performance-smoke`, `make performance-lighthouse`, `make query-plans-realistic`,
+  `make performance-lighthouse`, `make query-plans-realistic`,
   `make query-plans-stress`,
   `make -C frontend test`, `make -C frontend test-coverage`,
   `make -C frontend tests-coverage`, `make -C frontend lint`, `make -C frontend security`,

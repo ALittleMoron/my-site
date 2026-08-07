@@ -280,15 +280,13 @@ files under `backend/`. Keep shared cross-project configuration and common infra
 
 ## Performance
 
-- For backend changes that can realistically affect runtime performance, run
-  `make performance-smoke` before the first implementation change and again after the task, then
-  compare the generated reports to check for regressions. This applies to query shape, storage
-  access patterns, API handlers/use cases, serialization, caching, external I/O, migrations, or
-  data-volume behavior.
-- Skip this before/after smoke workflow for small edits with no credible performance impact, such
-  as narrow documentation, formatting, test-only, typing-only, naming-only, or localized mechanical
-  changes. If a pre-change smoke cannot be run because the task starts from a broken state, record
-  that in the final response and compare against the nearest available baseline/report instead.
+- For backend changes that can realistically affect PostgreSQL query shape, storage access patterns,
+  indexes, migrations, or data-volume behavior, run `make query-plans-realistic` before the first
+  implementation change and again after the task, then compare the generated reports.
+- Skip the before/after query-plan workflow for changes outside the PostgreSQL performance contour,
+  and for narrow documentation, formatting, test-only, typing-only, naming-only, or localized
+  mechanical changes. If a pre-change run cannot be performed because the task starts from a broken
+  state, record that in the final response and compare against the nearest available baseline/report.
 
 ## Dependency Injection
 

@@ -15,10 +15,6 @@ case "$action" in
         invalidate_backend_deps_marker
         uv sync --locked --all-extras
         ;;
-    install-performance)
-        invalidate_backend_deps_marker
-        uv sync --locked --group performance
-        ;;
     *)
         echo "Unknown install action: $action" >&2
         exit 2

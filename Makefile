@@ -26,10 +26,6 @@ certbot-sync:
 install-backend:
 	$(MAKE) -C backend install
 
-.PHONY: install-performance
-install-performance:
-	$(MAKE) -C backend install-performance
-
 .PHONY: migrate
 migrate:
 	$(MAKE) -C backend migrate
@@ -179,21 +175,9 @@ tests-compose:
 
 # Performance
 
-.PHONY: performance-smoke
-performance-smoke:
-	$(MAKE) -C backend performance-smoke
-
 .PHONY: performance-lighthouse
 performance-lighthouse:
 	$(MAKE) -C frontend lighthouse
-
-.PHONY: performance-baseline
-performance-baseline:
-	$(MAKE) -C backend performance-baseline
-
-.PHONY: performance-report-clean
-performance-report-clean:
-	$(MAKE) -C backend performance-report-clean
 
 .PHONY: query-plans-realistic
 query-plans-realistic:

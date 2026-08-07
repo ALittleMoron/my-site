@@ -83,7 +83,6 @@ jobs:
       SENTRY_DSN: ""
       VALKEY_HOST: localhost
       VALKEY_PORT: 6379
-      PERFORMANCE_INCLUDE_MATRIX_SUGGESTIONS: "false"
       QUERY_PLANS_REUSE_AVAILABLE_DB: "true"
     steps:
       - uses: actions/checkout@v7
