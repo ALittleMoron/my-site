@@ -30,6 +30,11 @@ Portfolio and articles site with a knowledge database
   not be skipped.
 - For non-trivial tasks, create and follow a structured implementation plan before changing code or
   configuration. Trivial docs-only edits and direct answers do not require a plan.
+- Do not leave Superpowers workflow artifact files in the repository. Do not create or retain design
+  specs or other Superpowers-generated documentation. A temporary implementation plan may be
+  created when required for execution, but delete the plan file before the final response. Preserve
+  the existing `docs/superpowers/specs/` and `docs/superpowers/plans/` directories; never remove
+  these directories during cleanup.
 - If a task turns out to be large enough to risk context degradation, split it into explicit subtasks and run sequential subagents for those subtasks. Each subagent must start its assigned subtask atomically, with a narrow scope and clear handoff back to the main thread.
 - Implement behavior changes and bug fixes with TDD by default: add or update the failing test first, then make it pass. If a test is not practical for the change, state why before implementing.
   Do not apply TDD by default to infrastructure-only changes such as Dockerfiles, docker compose,

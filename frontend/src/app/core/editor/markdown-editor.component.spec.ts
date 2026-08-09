@@ -417,6 +417,20 @@ describe('MarkdownEditorComponent', () => {
     expect(fixture.nativeElement.querySelector('.tok-heading')).not.toBeNull();
   });
 
+  it.each(['gherkin', 'feature', 'cucumber'])(
+    'highlights the %s Gherkin fence in the source editor',
+    (language) => {
+      fixture.componentRef.setInput(
+        'value',
+        `\`\`\`${language}\nFeature: Authentication\n  Scenario: Successful login\n    Given a registered user\n\`\`\``,
+      );
+      fixture.detectChanges();
+
+      expect(query<HTMLElement>('.cm-prism-keyword').textContent).toBe('Feature:');
+      expect(query<HTMLElement>('.cm-prism-atrule').textContent).toBe('Given');
+    },
+  );
+
   it('focuses the source editor through the public wrapper API', () => {
     fixture.componentInstance.focus();
 

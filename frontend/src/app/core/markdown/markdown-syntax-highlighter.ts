@@ -1,6 +1,7 @@
 import Prism from 'prismjs';
 import 'prismjs/components/prism-bash.js';
 import 'prismjs/components/prism-docker.js';
+import 'prismjs/components/prism-gherkin.js';
 import 'prismjs/components/prism-ini.js';
 import 'prismjs/components/prism-json.js';
 import 'prismjs/components/prism-markdown.js';
@@ -33,6 +34,9 @@ export type MarkdownPrism = typeof Prism & { manual: boolean };
 Prism.manual = true;
 
 export const MARKDOWN_PRISM = Prism as MarkdownPrism;
+
+MARKDOWN_PRISM.languages['feature'] = MARKDOWN_PRISM.languages['gherkin'];
+MARKDOWN_PRISM.languages['cucumber'] = MARKDOWN_PRISM.languages['gherkin'];
 
 export function highlightMarkdownCode(
   code: string,

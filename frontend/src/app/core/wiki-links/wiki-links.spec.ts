@@ -159,6 +159,21 @@ describe('wiki links', () => {
     expect(html).toContain('class="token ');
   });
 
+  it.each(['gherkin', 'feature', 'cucumber'])(
+    'highlights the %s Gherkin fence language',
+    (language) => {
+      const html = renderMarkdownWithWikiLinks(
+        `\`\`\`${language}\nFeature: Authentication\n  Scenario: Successful login\n    Given a registered user\n\`\`\``,
+        'en',
+        sanitizeHtml,
+      );
+
+      expect(html).toContain(`<code class="language-${language}">`);
+      expect(html).toContain('<span class="token keyword">Feature:</span>');
+      expect(html).toContain('<span class="token atrule">Given</span>');
+    },
+  );
+
   it.each(['', 'unknown-language'])(
     'keeps an unsupported "%s" fenced code block as escaped plain code',
     (language) => {
