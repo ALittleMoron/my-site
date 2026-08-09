@@ -4,7 +4,7 @@ from typing import cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ToolError
 
 import agent_bridge
 from core.agent_access.schemas import (
@@ -62,7 +62,9 @@ async def test_agent_bridge_exposes_only_five_closed_world_tools_and_exact_annot
     assert {tool.name for tool in tools} == TOOL_NAMES
     assert all(tool.description for tool in tools)
     annotations = {
-        tool.name: tool.annotations.model_dump(exclude_none=True) if tool.annotations else None
+        tool.name: tool.annotations.model_dump(exclude_none=True, by_alias=True)
+        if tool.annotations
+        else None
         for tool in tools
     }
     assert annotations == {
@@ -97,11 +99,11 @@ async def test_agent_bridge_exposes_only_five_closed_world_tools_and_exact_annot
             "openWorldHint": False,
         },
     }
-    assert all(tool.inputSchema["additionalProperties"] is False for tool in tools)
+    assert all(tool.input_schema["additionalProperties"] is False for tool in tools)
     save = next(tool for tool in tools if tool.name == "save_matrix_question_draft")
-    assert save.inputSchema["properties"]["resources"]["maxItems"] == 3
-    assert "publish_status" not in save.inputSchema["properties"]
-    assert "published_at" not in save.inputSchema["properties"]
+    assert save.input_schema["properties"]["resources"]["maxItems"] == 3
+    assert "publish_status" not in save.input_schema["properties"]
+    assert "published_at" not in save.input_schema["properties"]
 
 
 def test_agent_bridge_initialization_instructions_define_the_untrusted_data_boundary() -> None:

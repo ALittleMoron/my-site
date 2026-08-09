@@ -1,9 +1,8 @@
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
-from mcp.types import ContentBlock, ToolAnnotations
+from mcp.server.mcpserver import Context, MCPServer
+from mcp.types import CallToolResult, InputRequiredResult, ToolAnnotations
 
 from core.agent_access.use_cases import AgentBridgeUseCase
 from core.competency_matrix.enums import GradeEnum, InterviewFrequencyEnum
@@ -35,14 +34,15 @@ AGENT_BRIDGE_INSTRUCTIONS = (
 )
 
 
-class SanitizedAgentFastMCP(FastMCP[None]):
+class SanitizedAgentMCPServer(MCPServer[None]):
     async def call_tool(
         self,
         name: str,
         arguments: dict[str, Any],
-    ) -> Sequence[ContentBlock] | dict[str, Any]:
+        context: Context[None, Any] | None = None,
+    ) -> CallToolResult | InputRequiredResult:
         try:
-            return await super().call_tool(name, arguments)
+            return await super().call_tool(name, arguments, context)
         except Exception:  # noqa: BLE001
             raise AgentBridgeToolError from None
 
@@ -50,10 +50,10 @@ class SanitizedAgentFastMCP(FastMCP[None]):
 @dataclass(slots=True, kw_only=True)
 class AgentBridgeServer:
     use_case: AgentBridgeUseCase
-    server: SanitizedAgentFastMCP = field(init=False)
+    server: SanitizedAgentMCPServer = field(init=False)
 
     def __post_init__(self) -> None:
-        self.server = SanitizedAgentFastMCP(
+        self.server = SanitizedAgentMCPServer(
             name="my-site matrix authoring bridge",
             instructions=AGENT_BRIDGE_INSTRUCTIONS,
         )
@@ -62,46 +62,46 @@ class AgentBridgeServer:
     def _register_tools(self) -> None:
         self.server.tool(
             annotations=ToolAnnotations(
-                readOnlyHint=False,
-                destructiveHint=False,
-                idempotentHint=True,
-                openWorldHint=False,
+                read_only_hint=False,
+                destructive_hint=False,
+                idempotent_hint=True,
+                open_world_hint=False,
             ),
             structured_output=True,
         )(self.claim_next_matrix_question)
         self.server.tool(
             annotations=ToolAnnotations(
-                readOnlyHint=True,
-                destructiveHint=False,
-                idempotentHint=True,
-                openWorldHint=False,
+                read_only_hint=True,
+                destructive_hint=False,
+                idempotent_hint=True,
+                open_world_hint=False,
             ),
             structured_output=True,
         )(self.get_matrix_authoring_context)
         self.server.tool(
             annotations=ToolAnnotations(
-                readOnlyHint=True,
-                destructiveHint=False,
-                idempotentHint=True,
-                openWorldHint=False,
+                read_only_hint=True,
+                destructive_hint=False,
+                idempotent_hint=True,
+                open_world_hint=False,
             ),
             structured_output=True,
         )(self.search_matrix_resources)
         self.server.tool(
             annotations=ToolAnnotations(
-                readOnlyHint=False,
-                destructiveHint=True,
-                idempotentHint=True,
-                openWorldHint=False,
+                read_only_hint=False,
+                destructive_hint=True,
+                idempotent_hint=True,
+                open_world_hint=False,
             ),
             structured_output=True,
         )(self.save_matrix_question_draft)
         self.server.tool(
             annotations=ToolAnnotations(
-                readOnlyHint=False,
-                destructiveHint=False,
-                idempotentHint=True,
-                openWorldHint=False,
+                read_only_hint=False,
+                destructive_hint=False,
+                idempotent_hint=True,
+                open_world_hint=False,
             ),
             structured_output=True,
         )(self.release_matrix_question_claim)
