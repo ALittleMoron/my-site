@@ -1,6 +1,7 @@
 declare module 'prismjs/components/prism-bash.js';
 declare module 'prismjs/components/prism-docker.js';
 declare module 'prismjs/components/prism-gherkin.js';
+declare module 'prismjs/components/prism-go.js';
 declare module 'prismjs/components/prism-ini.js';
 declare module 'prismjs/components/prism-json.js';
 declare module 'prismjs/components/prism-markdown.js';

@@ -2,6 +2,7 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-bash.js';
 import 'prismjs/components/prism-docker.js';
 import 'prismjs/components/prism-gherkin.js';
+import 'prismjs/components/prism-go.js';
 import 'prismjs/components/prism-ini.js';
 import 'prismjs/components/prism-json.js';
 import 'prismjs/components/prism-markdown.js';

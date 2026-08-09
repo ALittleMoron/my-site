@@ -431,6 +431,14 @@ describe('MarkdownEditorComponent', () => {
     },
   );
 
+  it('highlights a Go fenced code block in the source editor', () => {
+    fixture.componentRef.setInput('value', '```go\nfunc main() {}\n```');
+    fixture.detectChanges();
+
+    expect(query<HTMLElement>('.cm-prism-keyword').textContent).toBe('func');
+    expect(query<HTMLElement>('.cm-prism-function').textContent).toBe('main');
+  });
+
   it('focuses the source editor through the public wrapper API', () => {
     fixture.componentInstance.focus();
 

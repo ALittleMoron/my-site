@@ -174,6 +174,18 @@ describe('wiki links', () => {
     },
   );
 
+  it('highlights a Go fenced code block', () => {
+    const html = renderMarkdownWithWikiLinks(
+      '```go\nfunc main() {}\n```',
+      'en',
+      sanitizeHtml,
+    );
+
+    expect(html).toContain('<code class="language-go">');
+    expect(html).toContain('<span class="token keyword">func</span>');
+    expect(html).toContain('<span class="token function">main</span>');
+  });
+
   it.each(['', 'unknown-language'])(
     'keeps an unsupported "%s" fenced code block as escaped plain code',
     (language) => {
