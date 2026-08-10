@@ -175,11 +175,7 @@ describe('wiki links', () => {
   );
 
   it('highlights a Go fenced code block', () => {
-    const html = renderMarkdownWithWikiLinks(
-      '```go\nfunc main() {}\n```',
-      'en',
-      sanitizeHtml,
-    );
+    const html = renderMarkdownWithWikiLinks('```go\nfunc main() {}\n```', 'en', sanitizeHtml);
 
     expect(html).toContain('<code class="language-go">');
     expect(html).toContain('<span class="token keyword">func</span>');
