@@ -29,10 +29,12 @@ export class ArticlesSidePanelComponent {
       key: folder.folderKey,
       label: folder.folder,
       trailingText: String(folder.articles.length),
+      hidden: false,
       items: folder.articles.map((article) => ({
         key: article.slug,
         label: article.title,
         badgeText: article.publishStatus === 'Draft' ? this.i18n.translate('shared.draft') : null,
+        hidden: false,
       })),
     }));
   });

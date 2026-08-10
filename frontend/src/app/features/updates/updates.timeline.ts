@@ -163,40 +163,6 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     tagIds: ['admin', 'frontend', 'backend', 'matrix', 'content', 'localization', 'security'],
   },
   {
-    id: 'private-people-knowledge-base',
-    month: '2026-07',
-    order: 8,
-    title: {
-      ru: 'База знаний получила приватные разделы людей и дат',
-      en: 'The knowledge base gained private People and Dates workspaces',
-    },
-    summary: {
-      ru:
-        'Владельцы и администраторы могут вести изолированные по автору карточки людей: ' +
-        'контакты и дни рождения, теги, типизированные связи, Markdown-заметки, фото и ' +
-        'вложения. Памятные ежегодные даты получили календарную сортировку, связи с людьми, ' +
-        'теги, заметки и приватные вложения; в карточках людей видны обратные ссылки. ' +
-        'Самостоятельный дашборд админ-панели показывает владельцам и администраторам памятные ' +
-        'даты и дни рождения за текущий и следующий месяцы, перелистываемую месячную сетку и ' +
-        'операционные инструменты в горизонтальных вкладках со складными панелями, а ' +
-        'модераторам — очередь и проблемные или неопубликованные вопросы матрицы компетенций. ' +
-        'Приватные файлы хранятся отдельно от публичного media bucket, читаются только через ' +
-        'проверяющий автора backend stream, а публичный S3 edge отвечает 404.',
-      en:
-        'Owners and administrators can maintain author-isolated people records with contacts ' +
-        'and birthdays, tags, typed relationships, Markdown notes, photos, and attachments. ' +
-        'Annual memorable dates gained calendar sorting, links to people, tags, notes, and ' +
-        'private attachments, with read-only backlinks on people records. The standalone admin ' +
-        'dashboard shows owners and administrators memorable dates and birthdays for the current ' +
-        'and next months, a navigable month grid, and operational tools in horizontal tabs with ' +
-        'persisted foldable panels, while moderators see the queue plus problematic or unpublished ' +
-        'competency matrix questions. Private files stay ' +
-        'separate from the public media bucket, are read only through an author-checking backend ' +
-        'stream, and return 404 at the public S3 edge.',
-    },
-    tagIds: ['admin', 'frontend', 'backend', 'matrix', 'security', 'infra'],
-  },
-  {
     id: 'release-workflow',
     month: '2026-07',
     order: 10,
@@ -332,10 +298,10 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     summary: {
       ru:
         'Модераторы, очередь вопросов, импорт из txt/csv/xlsx, редактор структуры ' +
-        'матрицы, валидация статей и resume workspace перешли в защищённую админку.',
+        'матрицы и валидация статей перешли в защищённую админку.',
       en:
         'Moderators, the question queue, txt/csv/xlsx imports, the matrix structure ' +
-        'editor, article validation, and the resume workspace moved into the protected admin.',
+        'editor, and article validation moved into the protected admin.',
     },
     tagIds: ['admin', 'frontend', 'backend', 'content', 'matrix'],
   },
@@ -358,7 +324,7 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     tagIds: ['quality', 'security', 'infra', 'delivery'],
   },
   {
-    id: 'angular-knowledge-base',
+    id: 'angular-ui-migration',
     month: '2026-05',
     order: 10,
     title: {
@@ -367,10 +333,10 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     },
     summary: {
       ru:
-        'Публичная база знаний переехала на Angular: матрица, статьи, интерфейсная ' +
+        'Публичный интерфейс сайта переехал на Angular: матрица, статьи, интерфейсная ' +
         'локализация RU/EN, фильтры, аналитика просмотров и первые performance checks.',
       en:
-        'The public knowledge base moved to Angular with the matrix, articles, RU/EN UI ' +
+        'The public site interface moved to Angular with the matrix, articles, RU/EN UI ' +
         'localization, filters, view analytics, and early performance checks.',
     },
     tagIds: ['frontend', 'content', 'matrix', 'localization', 'analytics'],
@@ -548,10 +514,10 @@ export const UPDATES_TIMELINE_ENTRIES: readonly UpdateTimelineEntry[] = [
     summary: {
       ru:
         'Появилась первая версия проекта и базовый security pipeline; с этого началась ' +
-        'история сайта как отдельной базы знаний.',
+        'история сайта.',
       en:
         'The first repository version and baseline security pipeline appeared; that is where ' +
-        'the site history as a standalone knowledge base begins.',
+        'the site history begins.',
     },
     tagIds: ['infra', 'security'],
   },

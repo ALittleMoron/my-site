@@ -60,21 +60,27 @@ export class AdminPanelPageComponent {
         key: 'dashboard',
         label: this.i18n.translate('adminPanel.section.dashboard'),
         badgeText: null,
+        hidden: false,
       },
     ];
   });
   readonly sections = computed<readonly FoldableTreeSection[]>(() => {
     this.i18n.language();
-    return this.visibleNavigationSections().map((section) => ({
-      key: section.key,
-      label: this.i18n.translate(section.labelKey),
-      trailingText: String(section.pages.length),
-      items: section.pages.map((page) => ({
+    return this.visibleNavigationSections().map((section) => {
+      const items = section.pages.map((page) => ({
         key: page.key,
         label: this.i18n.translate(page.labelKey),
         badgeText: page.badgeTextKey === null ? null : this.i18n.translate(page.badgeTextKey),
-      })),
-    }));
+        hidden: page.key === 'resumes',
+      }));
+      return {
+        key: section.key,
+        label: this.i18n.translate(section.labelKey),
+        trailingText: String(items.filter((item) => !item.hidden).length),
+        hidden: section.key === 'knowledge',
+        items,
+      };
+    });
   });
   readonly selectedPageKey = computed<string | null>(() => {
     const path = this.currentUrl().split(/[?#]/u, 1)[0];

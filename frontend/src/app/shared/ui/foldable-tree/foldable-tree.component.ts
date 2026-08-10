@@ -4,6 +4,7 @@ export interface FoldableTreeItem {
   key: string;
   label: string;
   badgeText: string | null;
+  hidden: boolean;
 }
 
 export interface FoldableTreeSection {
@@ -11,6 +12,7 @@ export interface FoldableTreeSection {
   label: string;
   trailingText: string | null;
   items: readonly FoldableTreeItem[];
+  hidden: boolean;
 }
 
 interface FoldableTreeTitleTarget {

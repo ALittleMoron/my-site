@@ -104,46 +104,6 @@ export const adminPanelRoutes: Routes = [
           ),
       },
       {
-        path: 'knowledge/people',
-        title: 'knowledgePeople.title',
-        canActivate: [teamGuard],
-        canDeactivate: [adminUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./knowledge/people/pages/people-list/people-list.component').then(
-            (m) => m.PeopleListComponent,
-          ),
-      },
-      {
-        path: 'knowledge/people/:id',
-        title: 'knowledgePeople.detailTitle',
-        canActivate: [teamGuard],
-        canDeactivate: [adminUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./knowledge/people/pages/person-detail/person-detail.component').then(
-            (m) => m.PersonDetailComponent,
-          ),
-      },
-      {
-        path: 'knowledge/dates',
-        title: 'knowledgeDates.title',
-        canActivate: [teamGuard],
-        canDeactivate: [adminUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./knowledge/dates/pages/dates-list/dates-list.component').then(
-            (m) => m.DatesListComponent,
-          ),
-      },
-      {
-        path: 'knowledge/dates/:id',
-        title: 'knowledgeDates.detailTitle',
-        canActivate: [teamGuard],
-        canDeactivate: [adminUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./knowledge/dates/pages/date-detail/date-detail.component').then(
-            (m) => m.DateDetailComponent,
-          ),
-      },
-      {
         path: 'workspace/tools',
         pathMatch: 'full',
         redirectTo: '/admin-panel/dashboard',
@@ -174,26 +134,6 @@ export const adminPanelRoutes: Routes = [
         loadComponent: () =>
           import('./pages/team-member-detail-page/team-member-detail-page.component').then(
             (m) => m.TeamMemberDetailPageComponent,
-          ),
-      },
-      {
-        path: 'workspace/resumes',
-        title: 'adminResumeWorkspace.title',
-        canActivate: [teamGuard],
-        canDeactivate: [adminUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./pages/resumes-page/resumes-page.component').then(
-            (m) => m.AdminResumesPageComponent,
-          ),
-      },
-      {
-        path: 'workspace/resumes/:id',
-        title: 'adminResumeWorkspace.detailTitle',
-        canActivate: [teamGuard],
-        canDeactivate: [adminUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./pages/resume-detail-page/resume-detail-page.component').then(
-            (m) => m.AdminResumeDetailPageComponent,
           ),
       },
     ],

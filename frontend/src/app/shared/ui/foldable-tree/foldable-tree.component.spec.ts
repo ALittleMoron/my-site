@@ -9,13 +9,16 @@ describe('FoldableTreeComponent', () => {
       key: 'matrix',
       label: 'Матрица компетенций',
       trailingText: '2',
+      hidden: false,
       items: [
-        { key: 'all-questions', label: 'Все вопросы', badgeText: null },
-        { key: 'typos', label: 'Опечатки от пользователей', badgeText: '4' },
+        { key: 'all-questions', label: 'Все вопросы', badgeText: null, hidden: false },
+        { key: 'typos', label: 'Опечатки от пользователей', badgeText: '4', hidden: false },
       ],
     },
   ];
-  const rootItems = [{ key: 'dashboard', label: 'Дашборд', badgeText: null }] as const;
+  const rootItems = [
+    { key: 'dashboard', label: 'Дашборд', badgeText: null, hidden: false },
+  ] as const;
 
   function openSection(): void {
     (
@@ -114,6 +117,34 @@ describe('FoldableTreeComponent', () => {
 
     expect(section.getAttribute('aria-expanded')).toBe('true');
     expect(items).toHaveLength(2);
+  });
+
+  it('keeps explicitly hidden sections and items in the DOM without displaying them', () => {
+    const hiddenSections = [
+      {
+        ...sections[0],
+        hidden: true,
+        items: sections[0].items.map((item, index) => ({
+          ...item,
+          hidden: index === 0,
+        })),
+      },
+    ] satisfies readonly FoldableTreeSection[];
+    fixture.componentRef.setInput('sections', hiddenSections);
+    fixture.componentRef.setInput('defaultExpandedSectionKeys', ['matrix']);
+    fixture.detectChanges();
+
+    const sectionGroup = fixture.nativeElement.querySelector(
+      '.foldable-tree-section-group',
+    ) as HTMLElement;
+    const hiddenItem = fixture.nativeElement.querySelector(
+      '.foldable-tree-items [data-testid="admin-tree-item"]',
+    ) as HTMLButtonElement;
+
+    expect(sectionGroup).not.toBeNull();
+    expect(hiddenItem).not.toBeNull();
+    expect(sectionGroup.style.display).toBe('none');
+    expect(hiddenItem.style.display).toBe('none');
   });
 
   it('sets the full item label title when the rendered label is truncated', () => {

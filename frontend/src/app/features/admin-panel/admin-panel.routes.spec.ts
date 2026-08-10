@@ -18,22 +18,10 @@ describe('adminPanelRoutes', () => {
     const teamWorkspaceRoutes = children.filter((route) =>
       route.path?.startsWith('workspace/team'),
     );
-    const resumeWorkspaceRoutes = children.filter((route) =>
-      route.path?.startsWith('workspace/resumes'),
-    );
-    const guardedPaths = new Set(
-      [...teamWorkspaceRoutes, ...resumeWorkspaceRoutes].map((route) => route.path),
-    );
+    const guardedPaths = new Set(teamWorkspaceRoutes.map((route) => route.path));
 
-    expect(guardedPaths).toEqual(
-      new Set([
-        'workspace/team',
-        'workspace/team/:username',
-        'workspace/resumes',
-        'workspace/resumes/:id',
-      ]),
-    );
-    for (const route of [...teamWorkspaceRoutes, ...resumeWorkspaceRoutes]) {
+    expect(guardedPaths).toEqual(new Set(['workspace/team', 'workspace/team/:username']));
+    for (const route of teamWorkspaceRoutes) {
       expect(route.canActivate).toEqual([teamGuard]);
     }
   });
@@ -68,27 +56,12 @@ describe('adminPanelRoutes', () => {
     expect(route?.loadComponent).toBeUndefined();
   });
 
-  it('keeps both private People routes behind the team and unsaved-change guards', () => {
-    const routes = (adminPanelRoutes[0].children ?? []).filter((child) =>
-      child.path?.startsWith('knowledge/people'),
+  it('does not register knowledge or resume workspace routes', () => {
+    const hiddenFeatureRoutes = (adminPanelRoutes[0].children ?? []).filter(
+      (child) =>
+        child.path?.startsWith('knowledge/') || child.path?.startsWith('workspace/resumes'),
     );
 
-    expect(routes.map((route) => route.path)).toEqual(['knowledge/people', 'knowledge/people/:id']);
-    for (const route of routes) {
-      expect(route.canActivate).toEqual([teamGuard]);
-      expect(route.canDeactivate).toEqual([adminUnsavedChangesGuard]);
-    }
-  });
-
-  it('keeps both private Dates routes behind the team and unsaved-change guards', () => {
-    const routes = (adminPanelRoutes[0].children ?? []).filter((child) =>
-      child.path?.startsWith('knowledge/dates'),
-    );
-
-    expect(routes.map((route) => route.path)).toEqual(['knowledge/dates', 'knowledge/dates/:id']);
-    for (const route of routes) {
-      expect(route.canActivate).toEqual([teamGuard]);
-      expect(route.canDeactivate).toEqual([adminUnsavedChangesGuard]);
-    }
+    expect(hiddenFeatureRoutes).toEqual([]);
   });
 });

@@ -53,7 +53,7 @@ describe('AdminPanelPageComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the admin header, workspace, and matrix question queue section for admins', () => {
+  it('renders active admin navigation and keeps resumes and knowledge hidden', () => {
     expect(fixture.nativeElement.querySelector('app-admin-panel-header')).not.toBeNull();
     expect(
       fixture.nativeElement.querySelector('[data-testid="admin-panel-side-panel"]'),
@@ -81,6 +81,24 @@ describe('AdminPanelPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
     expect(fixture.nativeElement.textContent).not.toContain('Структура матрицы');
     expect(fixture.nativeElement.textContent).not.toContain('Очередь вопросов матрицы');
+
+    const navigationSections = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-section"]'),
+    ) as HTMLButtonElement[];
+    const navigationItems = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
+    ) as HTMLButtonElement[];
+    const knowledgeSection = navigationSections.find((section) =>
+      section.textContent?.includes('База знаний'),
+    );
+    const resumesItem = navigationItems.find((item) => item.textContent?.includes('Резюме'));
+
+    expect(knowledgeSection?.closest('.foldable-tree-section-group')).not.toBeNull();
+    expect(
+      (knowledgeSection?.closest('.foldable-tree-section-group') as HTMLElement).style.display,
+    ).toBe('none');
+    expect(resumesItem).toBeDefined();
+    expect(resumesItem?.style.display).toBe('none');
   });
 
   it('places workspace navigation first in the side panel', () => {
@@ -89,7 +107,7 @@ describe('AdminPanelPageComponent', () => {
     ) as HTMLButtonElement[];
 
     expect(sections.map((section) => section.textContent?.trim().replace(/^[-+]\s*/, ''))).toEqual([
-      'Рабочая область2',
+      'Рабочая область1',
       'Статьи4',
       'Матрица3',
       'База знаний2',
