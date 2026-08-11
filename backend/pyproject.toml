@@ -8,7 +8,7 @@ readme = "README.md"
 license = { text = "MIT" }
 dependencies = [
     "cryptography>=50.0.0",
-    "granian[reload]>=2.7.9",
+    "granian[reload]>=2.8.1",
     "pydantic-settings>=2.14.2",
     "psycopg[binary]>=3.3.4",
     "verbose-http-exceptions[litestar]>=3.0.0",
