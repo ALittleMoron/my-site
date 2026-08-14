@@ -18,3 +18,5 @@ docs
 .claude
 CLAUDE.md
 node_modules
+backend/performance/reports
+frontend/performance/reports

@@ -7,7 +7,6 @@ from litestar.enums import RequestEncodingType
 from litestar.openapi.spec import Example
 from litestar.params import BodyKwarg, PathParameter, QueryParameter
 
-from core.calendar.enums import CalendarWindow
 from core.competency_matrix.enums import (
     CompetencyMatrixWorkspaceSortEnum,
     GradeEnum,
@@ -16,8 +15,6 @@ from core.competency_matrix.enums import (
 from core.enums import PublishStatusEnum
 from core.files.enums import FilePurpose
 from core.i18n.enums import LanguageEnum
-from core.knowledge.dates.enums import KnowledgeDateListSort
-from core.knowledge.people.enums import PersonListSort
 
 
 def build_examples(*values: object) -> list[Example]:
@@ -116,84 +113,6 @@ PageSizeQuery: TypeAlias = Annotated[
         examples=(20,),
         ge=1,
         le=100,
-        min_items=None,
-        max_items=None,
-    ),
-]
-CalendarReferenceDateQuery: TypeAlias = Annotated[
-    date,
-    api_query_parameter(
-        name="referenceDate",
-        title="Calendar reference date",
-        description="Browser-local date used to select the calendar window.",
-        examples=("2026-07-31",),
-        ge=None,
-        le=None,
-        min_items=None,
-        max_items=None,
-    ),
-]
-CalendarWindowQuery: TypeAlias = Annotated[
-    CalendarWindow,
-    api_query_parameter(
-        name="window",
-        title="Calendar window",
-        description="Single reference month or the reference and following months.",
-        examples=(CalendarWindow.CURRENT_AND_NEXT_MONTHS.value,),
-        ge=None,
-        le=None,
-        min_items=None,
-        max_items=None,
-    ),
-]
-PersonListSortQuery: TypeAlias = Annotated[
-    PersonListSort,
-    api_query_parameter(
-        name="sort",
-        title="People sort",
-        description="Stable ordering for the private people workspace.",
-        examples=(PersonListSort.UPDATED_NEWEST.value,),
-        ge=None,
-        le=None,
-        min_items=None,
-        max_items=None,
-    ),
-]
-KnowledgeDateListSortQuery: TypeAlias = Annotated[
-    KnowledgeDateListSort,
-    api_query_parameter(
-        name="sort",
-        title="Dates sort",
-        description="Stable ordering for the private memorable dates workspace.",
-        examples=(KnowledgeDateListSort.DATE_ASC.value,),
-        ge=None,
-        le=None,
-        min_items=None,
-        max_items=None,
-    ),
-]
-RelatedPersonIdQuery: TypeAlias = Annotated[
-    str | None,
-    api_query_parameter(
-        name="relatedPersonId",
-        title="Related person identifier",
-        description="Optional author-scoped person backlink filter.",
-        examples=("00000000000000000000000000000001",),
-        ge=None,
-        le=None,
-        min_items=None,
-        max_items=None,
-    ),
-]
-KnowledgeTagIdsQuery: TypeAlias = Annotated[
-    list[str] | None,
-    api_query_parameter(
-        name="tagIds",
-        title="Knowledge tag identifiers",
-        description="Optional tag identifiers combined with AND semantics.",
-        examples=(["00000000000000000000000000000001"],),
-        ge=None,
-        le=None,
         min_items=None,
         max_items=None,
     ),
@@ -335,60 +254,6 @@ AgentClientIdPath: TypeAlias = Annotated[
         name="client_id",
         title="Agent client ID",
         description="Agent client identifier.",
-        examples=("00000000000000000000000000000001",),
-    ),
-]
-PersonIdPath: TypeAlias = Annotated[
-    str,
-    api_path_parameter(
-        name="person_id",
-        title="Person ID",
-        description="Private person identifier.",
-        examples=("00000000000000000000000000000001",),
-    ),
-]
-KnowledgeDateIdPath: TypeAlias = Annotated[
-    str,
-    api_path_parameter(
-        name="date_id",
-        title="Knowledge date ID",
-        description="Private memorable date identifier.",
-        examples=("00000000000000000000000000000001",),
-    ),
-]
-KnowledgeItemIdPath: TypeAlias = Annotated[
-    str,
-    api_path_parameter(
-        name="item_id",
-        title="Knowledge item ID",
-        description="Private knowledge item identifier.",
-        examples=("00000000000000000000000000000001",),
-    ),
-]
-KnowledgeFileIdPath: TypeAlias = Annotated[
-    str,
-    api_path_parameter(
-        name="file_id",
-        title="Knowledge file ID",
-        description="Private author-scoped knowledge file identifier.",
-        examples=("00000000000000000000000000000001",),
-    ),
-]
-KnowledgeTagIdPath: TypeAlias = Annotated[
-    str,
-    api_path_parameter(
-        name="tag_id",
-        title="Knowledge tag ID",
-        description="Author-scoped knowledge tag identifier.",
-        examples=("00000000000000000000000000000001",),
-    ),
-]
-PersonRelationshipTypeIdPath: TypeAlias = Annotated[
-    str,
-    api_path_parameter(
-        name="relationship_type_id",
-        title="Person relationship type ID",
-        description="Author-scoped relationship type identifier.",
         examples=("00000000000000000000000000000001",),
     ),
 ]
@@ -684,15 +549,6 @@ FileIdPath: TypeAlias = Annotated[
         title="File identifier",
         description="Managed file identifier.",
         examples=("00000000000000000000000000000003",),
-    ),
-]
-ResumeIdPath: TypeAlias = Annotated[
-    str,
-    api_path_parameter(
-        name="resume_id",
-        title="Resume identifier",
-        description="Resume workspace identifier.",
-        examples=("00000000000000000000000000000004",),
     ),
 ]
 TagIdPath: TypeAlias = Annotated[

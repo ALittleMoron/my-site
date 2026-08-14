@@ -19,14 +19,11 @@ from tests.unit.mocks.providers.agent_access import MockAgentAccessProvider
 from tests.unit.mocks.providers.articles import MockArticlesProvider
 from tests.unit.mocks.providers.auth import MockAuthProvider
 from tests.unit.mocks.providers.cache_tools import MockCacheToolsProvider
-from tests.unit.mocks.providers.calendar import MockCalendarProvider
 from tests.unit.mocks.providers.competency_matrix import MockCompetencyMatrixProvider
 from tests.unit.mocks.providers.contacts import MockContactsProvider
 from tests.unit.mocks.providers.files import MockFilesProvider
 from tests.unit.mocks.providers.general import MockGeneralProvider
 from tests.unit.mocks.providers.healthcheck import MockHealthcheckProvider
-from tests.unit.mocks.providers.knowledge import MockKnowledgeProvider
-from tests.unit.mocks.providers.resumes import MockResumesProvider
 from tests.unit.mocks.providers.wiki_links import MockWikiLinksProvider
 
 
@@ -64,12 +61,9 @@ async def container(  # noqa: PLR0913
         DatabaseProvider(),
         MockGeneralProvider(uuid_=global_random_uuid, hex_uuid=global_random_hex_uuid),
         MockFilesProvider(random_suffix=random_suffix),
-        MockCalendarProvider(),
         MockCompetencyMatrixProvider(),
         MockArticlesProvider(),
         MockContactsProvider(),
-        MockKnowledgeProvider(),
-        MockResumesProvider(),
         MockUserAccountProvider(),
         MockAgentAccessProvider(),
         MockAuthProvider(settings=test_settings, user=jwt_admin, raw_token=raw_token),

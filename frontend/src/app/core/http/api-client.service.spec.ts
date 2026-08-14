@@ -44,23 +44,6 @@ describe('ApiClient', () => {
     req.flush({});
   });
 
-  it('should request protected binary content as a Blob', () => {
-    let result: Blob | undefined;
-    service.getBlob('/api/admin/knowledge/files/file-id/content').subscribe((value) => {
-      result = value;
-    });
-
-    const req = httpMock.expectOne((request) =>
-      request.url.endsWith('/api/admin/knowledge/files/file-id/content'),
-    );
-    expect(req.request.method).toBe('GET');
-    expect(req.request.responseType).toBe('blob');
-    const blob = new Blob(['private-content'], { type: 'application/octet-stream' });
-    req.flush(blob);
-
-    expect(result).toEqual(blob);
-  });
-
   it('should send POST body', () => {
     service.post<unknown>('/api/test', { name: 'x' }).subscribe();
 

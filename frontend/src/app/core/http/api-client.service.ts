@@ -28,24 +28,8 @@ export class ApiClient {
     return this.http.get<T>(`${this.baseUrl}${path}`, this.toHttpOptions(paramsOrOptions));
   }
 
-  getBlob(path: string, params?: QueryParams): Observable<Blob> {
-    const httpParams = params ? new HttpParams({ fromObject: params }) : undefined;
-    return this.http.get(`${this.baseUrl}${path}`, {
-      params: httpParams,
-      responseType: 'blob',
-    });
-  }
-
   post<T>(path: string, body: unknown, paramsOrOptions?: ParamsOrOptions): Observable<T> {
     return this.http.post<T>(`${this.baseUrl}${path}`, body, this.toHttpOptions(paramsOrOptions));
-  }
-
-  postBlob(path: string, body: unknown, params?: QueryParams): Observable<Blob> {
-    const httpParams = params ? new HttpParams({ fromObject: params }) : undefined;
-    return this.http.post(`${this.baseUrl}${path}`, body, {
-      params: httpParams,
-      responseType: 'blob',
-    });
   }
 
   put<T>(path: string, body: unknown, paramsOrOptions?: ParamsOrOptions): Observable<T> {

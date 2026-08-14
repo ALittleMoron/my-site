@@ -210,9 +210,6 @@ files under `backend/`. Keep shared cross-project configuration and common infra
   subsection tables, resource `name_*`, and attachment `context_*` fields.
   Competency matrix sheets must use a stable language-neutral `key`/`sheetKey` identifier, and
   questions must reference the normalized structure through a required `subsection_id`.
-  Resumes are single-language structured documents: store required `LanguageEnum`/`language` on the
-  resume, keep one content shape without resume-specific `*_ru` / `*_en` fields, and do not validate
-  whether the authored text actually matches the selected language.
   Do not add generic translation tables, production defaults, or fallback language behavior unless
   an explicit design change asks for them.
 - Localized read-facing core entities and read models should carry language-neutral projected fields
@@ -235,8 +232,8 @@ files under `backend/`. Keep shared cross-project configuration and common infra
   `I18N_DEFAULT_LANGUAGE` environment setting; do not add production defaults for it.
 - Keep the available-languages endpoint and bundle endpoint consistent with the enum and catalog,
   and cover new languages/keys with catalog parity tests.
-- Content localisation beyond articles, article tags, article folders, competency matrix content,
-  and resumes remains future work until explicitly designed.
+- Content localisation beyond articles, article tags, article folders, and competency matrix
+  content remains future work until explicitly designed.
 
 ## Article Analytics
 
@@ -251,32 +248,6 @@ files under `backend/`. Keep shared cross-project configuration and common infra
 - Database storages return domain schemas, not ORM models.
 - Storages may `flush`, but must not `commit`; transaction ownership belongs to the DI/session provider.
 - Every DB model change must include a matching Alembic migration.
-
-## Knowledge Database
-
-- Model common knowledge metadata through the generic typed item contract and add normalized
-  one-to-one extension tables plus type-specific use-case facades. Do not add JSON/EAV attribute
-  bags, generic persisted field definitions, or storage methods named for one item type when the
-  operation is truly common.
-- Keep Knowledge implementations partitioned into matching `items`, `files`, and `people`
-  subpackages across core, Litestar API, PostgreSQL models/storages, and IOC providers. Keep the
-  Knowledge API root limited to router composition instead of rebuilding a cross-feature monolith.
-  Domain enums belong to the subpackage that owns their meaning; do not collect item-, file-, and
-  people-specific enums in a shared Knowledge root module.
-- Every knowledge list, lookup, join, mutation, taxonomy operation, relationship operation, and
-  file operation must include the authenticated `author_username` in its database predicate.
-  Preserve composite author foreign keys and cover guessed-ID/cross-author behavior with storage,
-  use-case, and API IDOR tests.
-- Keep People free-text search limited to first, middle, and last names plus email. Phone and
-  Telegram are stored contact fields and must not become search predicates or indexed search
-  targets without an explicit product-design change.
-- Private knowledge objects use the internal-only `knowledge-private` client and protected backend
-  streaming. Never return a public/presigned object URL, add anonymous bucket policy/CORS, or remove
-  S3 objects before transaction commit. Keep replacement/deletion cleanup post-commit and
-  best-effort. After a new private object upload succeeds, register it for request rollback and
-  commit-failure cleanup; never run that cleanup after a successful commit. Keep raw query values,
-  concrete private knowledge paths/path parameters, and private object details out of
-  request/cleanup logs.
 
 ## Performance
 

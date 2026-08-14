@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, WritableSignal, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AccountInfo, AuthService } from '../../../../core/auth/auth.service';
 import { provideI18nTesting } from '../../../../testing/i18n-testing';
@@ -53,64 +53,29 @@ describe('AdminPanelPageComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders active admin navigation and keeps resumes and knowledge hidden', () => {
-    expect(fixture.nativeElement.querySelector('app-admin-panel-header')).not.toBeNull();
-    expect(
-      fixture.nativeElement.querySelector('[data-testid="admin-panel-side-panel"]'),
-    ).not.toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Разделы');
-    expect(
-      fixture.nativeElement.querySelector('[data-testid="admin-panel-tree-item"]'),
-    ).not.toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Рабочая область');
-    expect(fixture.nativeElement.textContent).toContain('Дашборд');
-    expect(fixture.nativeElement.textContent).toContain('Команда');
-    expect(fixture.nativeElement.textContent).toContain('Резюме');
-    expect(fixture.nativeElement.textContent).not.toContain('Инструменты');
-    expect(fixture.nativeElement.textContent).not.toContain('AI-агенты');
-    expect(fixture.nativeElement.textContent).toContain('Папки');
-    expect(fixture.nativeElement.textContent).toContain('Теги');
-    expect(fixture.nativeElement.textContent).toContain('Статистика');
-    expect(fixture.nativeElement.textContent).toContain('Вопросы');
-    expect(fixture.nativeElement.textContent).toContain('Структура');
-    expect(fixture.nativeElement.textContent).toContain('Очередь вопросов');
-    expect(fixture.nativeElement.textContent).toContain('База знаний');
-    expect(fixture.nativeElement.textContent).toContain('Люди');
-    expect(fixture.nativeElement.textContent).toContain('Даты');
-    expect(fixture.nativeElement.textContent).not.toContain('Папки статей');
-    expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
-    expect(fixture.nativeElement.textContent).not.toContain('Структура матрицы');
-    expect(fixture.nativeElement.textContent).not.toContain('Очередь вопросов матрицы');
-
-    const navigationSections = Array.from(
-      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-section"]'),
-    ) as HTMLButtonElement[];
-    const navigationItems = Array.from(
-      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
-    ) as HTMLButtonElement[];
-    const knowledgeSection = navigationSections.find((section) =>
-      section.textContent?.includes('База знаний'),
-    );
-    const resumesItem = navigationItems.find((item) => item.textContent?.includes('Резюме'));
-
-    expect(knowledgeSection?.closest('.foldable-tree-section-group')).not.toBeNull();
-    expect(
-      (knowledgeSection?.closest('.foldable-tree-section-group') as HTMLElement).style.display,
-    ).toBe('none');
-    expect(resumesItem).toBeDefined();
-    expect(resumesItem?.style.display).toBe('none');
-  });
-
-  it('places workspace navigation first in the side panel', () => {
+  it('renders only retained navigation sections and pages for administrators', () => {
     const sections = Array.from(
       fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-section"]'),
+    ) as HTMLButtonElement[];
+    const items = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
     ) as HTMLButtonElement[];
 
     expect(sections.map((section) => section.textContent?.trim().replace(/^[-+]\s*/, ''))).toEqual([
       'Рабочая область1',
       'Статьи4',
       'Матрица3',
-      'База знаний2',
+    ]);
+    expect(items.map((item) => item.textContent?.trim())).toEqual([
+      'Дашборд',
+      '+--Команда',
+      '+--Статьи',
+      '+--Папки',
+      '+--Теги',
+      '+--Статистика',
+      '+--Вопросы',
+      '+--Структура',
+      '+--Очередь вопросов',
     ]);
   });
 
@@ -120,16 +85,12 @@ describe('AdminPanelPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).not.toContain('Рабочая область');
-    expect(fixture.nativeElement.textContent).not.toContain('База знаний');
     expect(fixture.nativeElement.textContent).not.toContain('Команда');
-    expect(fixture.nativeElement.textContent).not.toContain('Резюме');
-    expect(fixture.nativeElement.textContent).not.toContain('Инструменты');
     expect(fixture.nativeElement.textContent).toContain('Вопросы');
     expect(fixture.nativeElement.textContent).toContain('Дашборд');
-    expect(fixture.nativeElement.textContent).not.toContain('Вопросы матрицы');
   });
 
-  it('shows workspace navigation for owners without exact admin access', () => {
+  it('shows owner-only agent client navigation without retired pages', () => {
     currentUser.set({ username: 'owner', role: 'owner' });
     isAdmin.set(false);
     isOwner.set(true);
@@ -138,38 +99,31 @@ describe('AdminPanelPageComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Рабочая область');
     expect(fixture.nativeElement.textContent).toContain('Команда');
-    expect(fixture.nativeElement.textContent).toContain('Резюме');
-    expect(fixture.nativeElement.textContent).not.toContain('Инструменты');
     expect(fixture.nativeElement.textContent).toContain('AI-агенты');
-    expect(fixture.nativeElement.textContent).toContain('База знаний');
-    expect(fixture.nativeElement.textContent).toContain('Даты');
+    expect(fixture.nativeElement.textContent).not.toContain('Резюме');
+    expect(fixture.nativeElement.textContent).not.toContain('База знаний');
   });
 
-  it('renders Dashboard as a root tree item with the shared active item state', () => {
+  it('renders Dashboard as a root tree item with page semantics', () => {
     const dashboard = Array.from(
       fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
     ).find((item) => item.textContent?.trim() === 'Дашборд') as HTMLButtonElement;
 
-    expect(dashboard.classList).toContain('foldable-tree-item');
     expect(dashboard.classList).toContain('foldable-tree-item-success');
     expect(dashboard.getAttribute('aria-selected')).toBe('true');
     expect(dashboard.getAttribute('aria-current')).toBe('page');
   });
 
-  it('derives selected items from direct and history navigation URLs', async () => {
-    await router.navigateByUrl('/admin-panel/knowledge/people/person-1');
+  it('derives the selected retained page from a detail URL', async () => {
+    await router.navigateByUrl('/admin-panel/articles/example');
     fixture.detectChanges();
 
-    const people = Array.from(
+    const articles = Array.from(
       fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
-    ).find((item) => item.textContent?.includes('Люди')) as HTMLButtonElement;
-    const dashboard = Array.from(
-      fixture.nativeElement.querySelectorAll('[data-testid="admin-panel-tree-item"]'),
-    ).find((item) => item.textContent?.trim() === 'Дашборд') as HTMLButtonElement;
+    ).find((item) => item.textContent?.trim() === '+--Статьи') as HTMLButtonElement;
 
-    expect(people.getAttribute('aria-current')).toBe('page');
-    expect(people.getAttribute('aria-selected')).toBe('true');
-    expect(dashboard.getAttribute('aria-current')).toBeNull();
+    expect(articles.getAttribute('aria-current')).toBe('page');
+    expect(articles.getAttribute('aria-selected')).toBe('true');
   });
 
   it('opens and closes the mobile drawer without removing the desktop side panel', () => {
@@ -181,7 +135,6 @@ describe('AdminPanelPageComponent', () => {
     ) as HTMLElement;
 
     expect(panel.classList).toContain('admin-panel-side-panel-open');
-
     toggle.click();
     fixture.detectChanges();
 

@@ -770,8 +770,10 @@ describe('Markdown table keyboard and editing interaction matrix', () => {
     ]),
   )(
     'handles $name from cell $row:$column without losing table validity',
-    ({ row, column, key: keyValue, shiftKey }) => {
+    async ({ row, column, key: keyValue, shiftKey }) => {
       const view = createView(NAVIGATION_SOURCE, views);
+      view.requestMeasure();
+      await flushEditorMeasure();
       const originalRows = renderedRows(view);
       const position = cellMetrics(view, { row, column }).start;
       setCursor(view, position);

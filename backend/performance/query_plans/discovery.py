@@ -9,12 +9,7 @@ STORAGE_MODULE_NAMES = (
     "infra.postgresql.storages.auth",
     "infra.postgresql.storages.competency_matrix",
     "infra.postgresql.storages.contacts",
-    "infra.postgresql.storages.knowledge.files",
-    "infra.postgresql.storages.knowledge.dates",
-    "infra.postgresql.storages.knowledge.items",
-    "infra.postgresql.storages.knowledge.people",
     "infra.postgresql.storages.articles",
-    "infra.postgresql.storages.resumes",
     "infra.postgresql.storages.users",
 )
 

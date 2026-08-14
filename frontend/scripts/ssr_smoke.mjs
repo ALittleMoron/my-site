@@ -109,7 +109,10 @@ async function assertSiteBuildCaseStudyHtml(frontendPort, requests) {
   const expected = [
     ['status 200', response.status === 200],
     ['title', html.includes('<title>How this site is built</title>')],
-    ['hero', html.includes('Engineering case study of a production-minded knowledge base.')],
+    [
+      'hero',
+      html.includes('Engineering case study of a production-minded portfolio and articles site.'),
+    ],
     ['architecture', html.includes('Angular hybrid SSR/CSR and backend-driven i18n.')],
     ['source code CTA', html.includes('href="https://github.com/ALittleMoron/my-site"')],
     [
@@ -132,7 +135,7 @@ async function assertUpdatesHtml(frontendPort, requests) {
   const expected = [
     ['status 200', response.status === 200],
     ['title', html.includes('<title>Updates</title>')],
-    ['hero', html.includes('Major changes to the site and knowledge base')],
+    ['hero', html.includes('Major changes to the portfolio and articles site')],
     ['month', html.includes('Июль 2026')],
     ['history month', html.includes('Сентябрь 2024')],
     ['milestone', html.includes('Публичный SEO-контур вышел в SSR')],

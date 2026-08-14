@@ -5,9 +5,7 @@ import {
   DestroyRef,
   OnInit,
   computed,
-  effect,
   inject,
-  output,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -54,7 +52,6 @@ export class AdminToolsWidgetComponent implements OnInit {
   readonly sessionsLoadError = signal<ApiError | null>(null);
   readonly sessionsPruning = signal(false);
   readonly sessionsActionErrorKey = signal<string | null>(null);
-  readonly summaryChange = output<string>();
 
   readonly cacheInitialLoading = computed(() => this.cacheLoading() && this.cacheStatus() === null);
   readonly sessionsInitialLoading = computed(
@@ -67,33 +64,10 @@ export class AdminToolsWidgetComponent implements OnInit {
   readonly cacheActionsDisabled = computed(
     () => this.cacheMutationActive() || this.cacheStatus()?.enabled !== true,
   );
-  readonly dashboardSummary = computed(() => {
-    this.i18n.language();
-    const summary = [this.i18n.translate('dashboard.tools.summary')];
-    const cacheStatus = this.cacheStatus();
-    const sessionsStatus = this.sessionsStatus();
-    if (cacheStatus !== null) {
-      summary.push(
-        this.i18n.translate(
-          cacheStatus.enabled ? 'adminTools.cache.enabled' : 'adminTools.cache.disabled',
-        ),
-      );
-    }
-    if (sessionsStatus !== null) {
-      summary.push(
-        this.i18n.translate('adminTools.sessions.expiredMetric', {
-          count: sessionsStatus.expiredCount,
-        }),
-      );
-    }
-    return summary.join(' · ');
-  });
-
   private warmPollTimeoutId: number | null = null;
 
   constructor() {
     this.destroyRef.onDestroy(() => this.clearWarmPoll());
-    effect(() => this.summaryChange.emit(this.dashboardSummary()));
   }
 
   ngOnInit(): void {

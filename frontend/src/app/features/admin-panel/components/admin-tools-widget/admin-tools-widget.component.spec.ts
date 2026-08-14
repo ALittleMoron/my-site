@@ -84,15 +84,6 @@ describe('AdminToolsWidgetComponent', () => {
     expect(text).toContain('Успешно');
   });
 
-  it('reports a dashboard summary with cache state and expired-session count', () => {
-    const summaries: string[] = [];
-    fixture.componentInstance.summaryChange.subscribe((summary) => summaries.push(summary));
-
-    fixture.detectChanges();
-
-    expect(summaries.at(-1)).toBe('Кэш и обслуживание сессий · Включён · Протухшие: 12');
-  });
-
   it('shows an actionable cache load error and retries only that card', () => {
     service.getCacheStatus
       .mockReturnValueOnce(throwError(() => apiError('cache unavailable')))

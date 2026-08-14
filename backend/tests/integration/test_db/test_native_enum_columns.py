@@ -28,7 +28,6 @@ class TestNativeEnumColumns(StorageTestCase):
             ),
             ("competency_matrix__queued_question_model", "grade"): ("grade_enum", "e"),
             ("files__file_model", "purpose"): ("file_purpose_enum", "e"),
-            ("resumes__resume_model", "language"): ("language_enum", "e"),
         }
         result = await self.db_session.execute(
             text(
@@ -61,8 +60,7 @@ class TestNativeEnumColumns(StorageTestCase):
                             'publish_status'
                         ),
                         ('competency_matrix__queued_question_model', 'grade'),
-                        ('files__file_model', 'purpose'),
-                        ('resumes__resume_model', 'language')
+                        ('files__file_model', 'purpose')
                 ) AS expected(table_name, column_name)
                 JOIN pg_class
                     ON pg_class.relname = expected.table_name

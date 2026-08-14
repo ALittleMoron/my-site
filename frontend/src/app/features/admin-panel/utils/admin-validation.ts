@@ -10,7 +10,6 @@ export const ADMIN_VALIDATION_LIMITS = {
   seoDescription: 320,
   articleContent: 100000,
   matrixLongText: 20000,
-  resumeLongText: 10000,
 } as const;
 
 export const ADMIN_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

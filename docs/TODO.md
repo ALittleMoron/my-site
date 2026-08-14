@@ -790,7 +790,6 @@ Graph views, plugin APIs, and plugin-system support are explicitly out of scope 
 ### Other tasks
 
 - [ ] Split monorepo into separate repos: front, back, infra.
-- [ ] Remove private Knowledge, Calendar, and Resume from `my-site` after `personal-workspace` passes its documented parity gate.
 - [x] UI localisation
 - [x] Database localisation
 - [ ] Migrate from Makefile to Just

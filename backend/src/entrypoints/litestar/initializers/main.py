@@ -7,7 +7,7 @@ from litestar import Litestar, Router
 from litestar.config.response_cache import ResponseCacheConfig
 from litestar.logging import StructLoggingConfig
 from litestar.middleware import DefineMiddleware
-from litestar.middleware.logging import LoggingMiddlewareConfig
+from litestar.middleware.logging import LoggingMiddleware, LoggingMiddlewareConfig
 from litestar.openapi import OpenAPIConfig
 from litestar.openapi.plugins import SwaggerRenderPlugin
 from litestar.plugins import PluginProtocol
@@ -25,7 +25,6 @@ from entrypoints.litestar.middlewares.agent_audit import AgentOutcomeAuditMiddle
 from entrypoints.litestar.middlewares.auth import AuthenticationMiddleware
 from entrypoints.litestar.middlewares.logging import (
     LogExceptionMiddleware,
-    PrivacySafeLoggingMiddleware,
     RequestIdLoggingMiddleware,
 )
 from entrypoints.litestar.openapi_metadata import install_openapi_request_body_metadata
@@ -85,7 +84,7 @@ def create_logging_middleware_config() -> LoggingMiddlewareConfig:
     return LoggingMiddlewareConfig(
         request_log_fields=["path", "method", "path_params"],
         response_log_fields=["status_code"],
-        middleware_class=PrivacySafeLoggingMiddleware,
+        middleware_class=LoggingMiddleware,
     )
 
 

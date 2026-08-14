@@ -14,14 +14,6 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         ownerOnly: false,
       },
       {
-        key: 'resumes',
-        labelKey: 'adminPanel.section.resumes',
-        route: '/admin-panel/workspace/resumes',
-        badgeTextKey: null,
-        adminOnly: true,
-        ownerOnly: false,
-      },
-      {
         key: 'agent-clients',
         labelKey: 'adminPanel.section.agentClients',
         route: '/admin-panel/workspace/agent-clients',
@@ -95,28 +87,6 @@ export const ADMIN_PANEL_NAVIGATION_SECTIONS: readonly AdminPanelNavigationSecti
         route: '/admin-panel/matrix-question-queue',
         badgeTextKey: null,
         adminOnly: false,
-        ownerOnly: false,
-      },
-    ],
-  },
-  {
-    key: 'knowledge',
-    labelKey: 'adminPanel.section.knowledge',
-    pages: [
-      {
-        key: 'knowledge-people',
-        labelKey: 'adminPanel.section.people',
-        route: '/admin-panel/knowledge/people',
-        badgeTextKey: null,
-        adminOnly: true,
-        ownerOnly: false,
-      },
-      {
-        key: 'knowledge-dates',
-        labelKey: 'adminPanel.section.dates',
-        route: '/admin-panel/knowledge/dates',
-        badgeTextKey: null,
-        adminOnly: true,
         ownerOnly: false,
       },
     ],

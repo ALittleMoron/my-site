@@ -1,9 +1,9 @@
 from ipaddress import IPv4Address
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Literal
 
 from litestar.config.response_cache import CACHE_FOREVER
-from pydantic import Field, PositiveInt, SecretStr, field_validator
+from pydantic import PositiveInt, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from core.files.types import Namespace
@@ -133,7 +133,7 @@ class MinioSettings(ProjectBaseSettings):
 class FilesSettings(ProjectBaseSettings):
     model_config = SettingsConfigDict(env_prefix="FILES_")
 
-    orphan_retention_seconds: Annotated[PositiveInt, Field(ge=604_800)]
+    orphan_retention_seconds: PositiveInt
 
 
 class SentrySettings(ProjectBaseSettings):

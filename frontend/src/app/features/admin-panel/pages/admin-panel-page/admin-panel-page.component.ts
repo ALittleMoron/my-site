@@ -60,7 +60,6 @@ export class AdminPanelPageComponent {
         key: 'dashboard',
         label: this.i18n.translate('adminPanel.section.dashboard'),
         badgeText: null,
-        hidden: false,
       },
     ];
   });
@@ -71,13 +70,11 @@ export class AdminPanelPageComponent {
         key: page.key,
         label: this.i18n.translate(page.labelKey),
         badgeText: page.badgeTextKey === null ? null : this.i18n.translate(page.badgeTextKey),
-        hidden: page.key === 'resumes',
       }));
       return {
         key: section.key,
         label: this.i18n.translate(section.labelKey),
-        trailingText: String(items.filter((item) => !item.hidden).length),
-        hidden: section.key === 'knowledge',
+        trailingText: String(items.length),
         items,
       };
     });

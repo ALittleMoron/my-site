@@ -47,7 +47,6 @@ from core.competency_matrix.exceptions import (
 )
 from core.exceptions import DomainError, EntryNotFoundError
 from core.files.exceptions import FileClientInternalError, FileInUseError, InvalidFileDataError
-from core.knowledge.exceptions import InvalidKnowledgeDataError, KnowledgeConflictError
 from entrypoints.litestar import exception_handlers
 from entrypoints.litestar.exception_handlers import get_litestar_exception_handlers
 from infra.healthcheck import ReadinessCheckError
@@ -227,8 +226,6 @@ def test_domain_error_verbose_exception_mapping() -> None:
         ManagedAccountActionForbiddenError: ForbiddenHTTPException,
         ArticleFolderAlreadyExistsError: BadRequestHTTPException,
         ArticleFolderPriorityInvalidError: BadRequestHTTPException,
-        InvalidKnowledgeDataError: BadRequestHTTPException,
-        KnowledgeConflictError: ConflictHTTPException,
     }
     assert expected_mapping == exception_handlers.DOMAIN_ERROR_MAPPING
 

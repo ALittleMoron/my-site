@@ -190,39 +190,6 @@ class TestI18nCatalog:
         assert english_messages["adminPanel.section.matrixStructure"] == "Structure"
         assert english_messages["adminPanel.section.matrixQuestionQueue"] == "Question queue"
 
-    def test_people_workspace_catalog_has_complete_ru_en_chrome(self) -> None:
-        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
-        english_messages = get_i18n_messages(language=LanguageEnum.EN)
-        required_keys = {
-            "adminPanel.section.knowledge",
-            "adminPanel.section.people",
-            "knowledgePeople.title",
-            "knowledgePeople.create",
-            "knowledgePeople.section.basic",
-            "knowledgePeople.section.contacts",
-            "knowledgePeople.section.description",
-            "knowledgePeople.section.tags",
-            "knowledgePeople.section.relationships",
-            "knowledgePeople.section.attachments",
-            "knowledgePeople.relationshipTypes.manage",
-            "knowledgePeople.attachmentDownloadError",
-            "knowledgePeople.photoSaveError",
-        }
-
-        assert required_keys <= russian_messages.keys()
-        assert required_keys <= english_messages.keys()
-        assert (
-            russian_messages["adminPanel.section.knowledge"]
-            != english_messages["adminPanel.section.knowledge"]
-        )
-
-    def test_dates_optional_year_label_does_not_repeat_optionality(self) -> None:
-        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
-        english_messages = get_i18n_messages(language=LanguageEnum.EN)
-
-        assert russian_messages["knowledgeDates.year"] == "Год начала"
-        assert english_messages["knowledgeDates.year"] == "First year"
-
     def test_matrix_draft_blocker_summary_labels_fit_the_summary_card(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
@@ -287,10 +254,8 @@ class TestI18nCatalog:
         assert english_messages["shell.footer.siteBuild"] == "How this site is built"
         assert "инженерный разбор" in russian_messages["siteBuild.hero.lead"].lower()
         assert "engineering case study" in english_messages["siteBuild.hero.lead"].lower()
-        assert "портфолио" not in russian_messages["siteBuild.hero.lead"].lower()
-        assert "личн" not in russian_messages["siteBuild.seo.description"].lower()
-        assert "portfolio" not in english_messages["siteBuild.hero.lead"].lower()
-        assert "personal" not in english_messages["siteBuild.seo.description"].lower()
+        assert "портфолио" in russian_messages["siteBuild.hero.lead"].lower()
+        assert "portfolio" in english_messages["siteBuild.hero.lead"].lower()
         assert "Litestar" in russian_messages["siteBuild.architecture.backendBody"]
         assert "Angular" in english_messages["siteBuild.architecture.frontendBody"]
         assert "самовосстанавливается" in russian_messages["siteBuild.architecture.infraBody"]

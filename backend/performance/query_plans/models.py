@@ -40,25 +40,6 @@ class ArticleCardinalities:
 
 
 @dataclass(frozen=True, slots=True)
-class ResumeCardinalities:
-    resumes: int
-
-
-@dataclass(frozen=True, slots=True)
-class KnowledgeCardinalities:
-    items: int
-    dates: int
-    search_match_percentage: int
-    tags: int
-    item_tag_links: int
-    date_tag_links: int
-    relationship_types: int
-    relationships: int
-    date_person_links: int
-    files: int
-
-
-@dataclass(frozen=True, slots=True)
 class MatrixCardinalities:
     sheets: int
     sections_per_sheet: int
@@ -78,8 +59,6 @@ class AgentAccessCardinalities:
 class ProfileCardinalities:
     auth: AuthCardinalities
     articles: ArticleCardinalities
-    resumes: ResumeCardinalities
-    knowledge: KnowledgeCardinalities
     matrix: MatrixCardinalities
     agent_access: AgentAccessCardinalities
 
@@ -121,22 +100,6 @@ class QueryPlanProfile:
             "articles__article_to_tag_secondary_model": (cardinalities.articles.article_tag_links),
             "articles__article_daily_analytics_model": cardinalities.articles.daily_analytics,
             "articles__article_reaction_model": cardinalities.articles.reactions,
-            "resumes__resume_model": cardinalities.resumes.resumes,
-            "knowledge__knowledge_item_model": (
-                cardinalities.knowledge.items + cardinalities.knowledge.dates
-            ),
-            "knowledge__knowledge_tag_model": cardinalities.knowledge.tags,
-            "knowledge__knowledge_item_tag_model": (
-                cardinalities.knowledge.item_tag_links + cardinalities.knowledge.date_tag_links
-            ),
-            "knowledge__person_details_model": cardinalities.knowledge.items,
-            "knowledge__date_details_model": cardinalities.knowledge.dates,
-            "knowledge__date_person_model": cardinalities.knowledge.date_person_links,
-            "knowledge__person_relationship_type_model": (
-                cardinalities.knowledge.relationship_types
-            ),
-            "knowledge__person_relationship_model": cardinalities.knowledge.relationships,
-            "knowledge__knowledge_file_model": cardinalities.knowledge.files,
             "competency_matrix__competency_matrix_sheet_model": matrix.sheets,
             "competency_matrix__competency_matrix_section_model": section_count,
             "competency_matrix__competency_matrix_subsection_model": subsection_count,
@@ -251,19 +214,6 @@ REALISTIC_PROFILE = QueryPlanProfile(
             daily_analytics=100_000,
             reactions=10_000,
         ),
-        resumes=ResumeCardinalities(resumes=250),
-        knowledge=KnowledgeCardinalities(
-            items=5_000,
-            dates=5_000,
-            search_match_percentage=10,
-            tags=500,
-            item_tag_links=20_000,
-            date_tag_links=20_000,
-            relationship_types=100,
-            relationships=20_000,
-            date_person_links=20_000,
-            files=10_000,
-        ),
         matrix=MatrixCardinalities(
             sheets=20,
             sections_per_sheet=8,
@@ -295,19 +245,6 @@ STRESS_PROFILE = QueryPlanProfile(
             daily_analytics=2_000_000,
             reactions=500_000,
         ),
-        resumes=ResumeCardinalities(resumes=50_000),
-        knowledge=KnowledgeCardinalities(
-            items=200_000,
-            dates=200_000,
-            search_match_percentage=10,
-            tags=30_000,
-            item_tag_links=500_000,
-            date_tag_links=500_000,
-            relationship_types=10_000,
-            relationships=500_000,
-            date_person_links=500_000,
-            files=500_000,
-        ),
         matrix=MatrixCardinalities(
             sheets=20,
             sections_per_sheet=8,
@@ -322,74 +259,5 @@ STRESS_PROFILE = QueryPlanProfile(
     timing_mode=TimingMode.OBSERVE,
     explain_runs=3,
     explain_work_mem_mb=64,
-    scenario_plan_shape_overrides={
-        "knowledge_tags_list": ScenarioPlanShapeOverride(
-            expected_indexes=(),
-            forbidden_seq_scan_relations=(),
-            allow_seq_scan_reason=(
-                "the stress fixture models a single author owning all 30,000 tags, "
-                "so the unpaginated taxonomy list must read the whole relation and "
-                "PostgreSQL correctly prefers a sequential scan"
-            ),
-        ),
-        "people_relationship_types_list": ScenarioPlanShapeOverride(
-            expected_indexes=(),
-            forbidden_seq_scan_relations=(),
-            allow_seq_scan_reason=(
-                "the stress fixture models a single author owning all 10,000 "
-                "relationship types, so the unpaginated taxonomy list must read the "
-                "whole relation and PostgreSQL correctly prefers a sequential scan"
-            ),
-        ),
-        # At stress cardinality PostgreSQL uses the globally unique details PK
-        # instead of the redundant author-qualified unique index used by realistic.
-        "people_page_search_and_tags": ScenarioPlanShapeOverride(
-            expected_indexes=(
-                ExpectedIndex(
-                    name="knowledge_item_tags_author_tag_item_idx",
-                    relation_name="knowledge__knowledge_item_tag_model",
-                ),
-                ExpectedIndex(
-                    name="knowledge__person_details_model_pkey",
-                    relation_name="knowledge__person_details_model",
-                ),
-                ExpectedIndex(
-                    name="knowledge__knowledge_item_model_pkey",
-                    relation_name="knowledge__knowledge_item_model",
-                ),
-            ),
-            forbidden_seq_scan_relations=(
-                "knowledge__knowledge_item_model",
-                "knowledge__knowledge_item_tag_model",
-                "knowledge__person_details_model",
-            ),
-            allow_seq_scan_reason=None,
-        ),
-        # The filtered Dates page uses the author-qualified details index for
-        # the count query and the globally unique details PK for the page query.
-        # Keep the common selective path mandatory and forbid a details seq scan.
-        "knowledge_dates_page_search_tags_person": ScenarioPlanShapeOverride(
-            expected_indexes=(
-                ExpectedIndex(
-                    name="knowledge_item_tags_author_tag_item_idx",
-                    relation_name="knowledge__knowledge_item_tag_model",
-                ),
-                ExpectedIndex(
-                    name="date_people_author_person_date_idx",
-                    relation_name="knowledge__date_person_model",
-                ),
-                ExpectedIndex(
-                    name="knowledge__knowledge_item_model_pkey",
-                    relation_name="knowledge__knowledge_item_model",
-                ),
-            ),
-            forbidden_seq_scan_relations=(
-                "knowledge__knowledge_item_model",
-                "knowledge__knowledge_item_tag_model",
-                "knowledge__date_details_model",
-                "knowledge__date_person_model",
-            ),
-            allow_seq_scan_reason=None,
-        ),
-    },
+    scenario_plan_shape_overrides={},
 )

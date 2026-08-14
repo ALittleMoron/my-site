@@ -204,7 +204,6 @@ def serialize_profile(*, profile: QueryPlanProfile) -> Mapping[str, object]:
                 "dailyAnalytics": cardinalities.articles.daily_analytics,
                 "reactions": cardinalities.articles.reactions,
             },
-            "resumes": {"resumes": cardinalities.resumes.resumes},
             "matrix": {
                 "sheets": cardinalities.matrix.sheets,
                 "sectionsPerSheet": cardinalities.matrix.sections_per_sheet,

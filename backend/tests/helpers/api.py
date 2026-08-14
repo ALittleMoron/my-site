@@ -40,157 +40,6 @@ class APIHelper:
     def get_i18n_bundle(self, language: str) -> Response:
         return self.client.get(f"/api/i18n/bundles/{language}")
 
-    def get_admin_people(
-        self,
-        *,
-        page: int | None = 1,
-        page_size: int | None = 20,
-        sort: str | None = "updatedNewest",
-        search_query: str | None = None,
-        tag_ids: list[str] | None = None,
-    ) -> Response:
-        params: dict[str, str | int | list[str]] = {
-            key: value
-            for key, value in (
-                ("page", page),
-                ("pageSize", page_size),
-                ("sort", sort),
-                ("searchQuery", search_query),
-                ("tagIds", tag_ids),
-            )
-            if value is not None
-        }
-        return self.client.get("/api/admin/knowledge/people", params=params)
-
-    def get_admin_calendar(
-        self,
-        *,
-        reference_date: str | None,
-        window: str | None,
-    ) -> Response:
-        params = {
-            key: value
-            for key, value in (("referenceDate", reference_date), ("window", window))
-            if value is not None
-        }
-        return self.client.get("/api/admin/calendar", params=params)
-
-    def post_admin_person(self, *, data: dict[str, Any]) -> Response:
-        return self.client.post("/api/admin/knowledge/people", json=data)
-
-    def get_admin_person(self, *, person_id: int | str) -> Response:
-        return self.client.get(
-            f"/api/admin/knowledge/people/{self._entity_id(person_id)}",
-        )
-
-    def put_admin_person(self, *, person_id: int | str, data: dict[str, Any]) -> Response:
-        return self.client.put(
-            f"/api/admin/knowledge/people/{self._entity_id(person_id)}",
-            json=data,
-        )
-
-    def delete_admin_person(self, *, person_id: int | str) -> Response:
-        return self.client.delete(
-            f"/api/admin/knowledge/people/{self._entity_id(person_id)}",
-        )
-
-    def get_admin_knowledge_dates(
-        self,
-        *,
-        page: int | None = 1,
-        page_size: int | None = 20,
-        sort: str | None = "dateAsc",
-        search_query: str | None = None,
-        tag_ids: list[str] | None = None,
-        related_person_id: str | None = None,
-    ) -> Response:
-        params: dict[str, str | int | list[str]] = {
-            key: value
-            for key, value in (
-                ("page", page),
-                ("pageSize", page_size),
-                ("sort", sort),
-                ("searchQuery", search_query),
-                ("tagIds", tag_ids),
-                ("relatedPersonId", related_person_id),
-            )
-            if value is not None
-        }
-        return self.client.get("/api/admin/knowledge/dates", params=params)
-
-    def post_admin_knowledge_date(self, *, data: dict[str, Any]) -> Response:
-        return self.client.post("/api/admin/knowledge/dates", json=data)
-
-    def get_admin_knowledge_date(self, *, date_id: int | str) -> Response:
-        return self.client.get(
-            f"/api/admin/knowledge/dates/{self._entity_id(date_id)}",
-        )
-
-    def put_admin_knowledge_date(
-        self,
-        *,
-        date_id: int | str,
-        data: dict[str, Any],
-    ) -> Response:
-        return self.client.put(
-            f"/api/admin/knowledge/dates/{self._entity_id(date_id)}",
-            json=data,
-        )
-
-    def delete_admin_knowledge_date(self, *, date_id: int | str) -> Response:
-        return self.client.delete(
-            f"/api/admin/knowledge/dates/{self._entity_id(date_id)}",
-        )
-
-    def get_admin_knowledge_tags(self, *, search_query: str | None = None) -> Response:
-        params = {"searchQuery": search_query} if search_query is not None else None
-        return self.client.get("/api/admin/knowledge/tags", params=params)
-
-    def post_admin_knowledge_tag(self, *, data: dict[str, Any]) -> Response:
-        return self.client.post("/api/admin/knowledge/tags", json=data)
-
-    def put_admin_knowledge_tag(self, *, tag_id: int | str, data: dict[str, Any]) -> Response:
-        return self.client.put(
-            f"/api/admin/knowledge/tags/{self._entity_id(tag_id)}",
-            json=data,
-        )
-
-    def delete_admin_knowledge_tag(self, *, tag_id: int | str) -> Response:
-        return self.client.delete(
-            f"/api/admin/knowledge/tags/{self._entity_id(tag_id)}",
-        )
-
-    def get_admin_person_relationship_types(self) -> Response:
-        return self.client.get("/api/admin/knowledge/people/relationship-types")
-
-    def post_admin_person_relationship_type(self, *, data: dict[str, Any]) -> Response:
-        return self.client.post(
-            "/api/admin/knowledge/people/relationship-types",
-            json=data,
-        )
-
-    def put_admin_person_relationship_type(
-        self,
-        *,
-        relationship_type_id: int | str,
-        data: dict[str, Any],
-    ) -> Response:
-        return self.client.put(
-            "/api/admin/knowledge/people/relationship-types/"
-            f"{self._entity_id(relationship_type_id)}",
-            json=data,
-        )
-
-    def delete_admin_person_relationship_type(
-        self,
-        *,
-        relationship_type_id: int | str,
-    ) -> Response:
-        return self.client.delete(
-            "/api/admin/knowledge/people/relationship-types/"
-            f"{self._entity_id(relationship_type_id)}",
-        )
-
     def get_admin_agent_clients(self) -> Response:
         return self.client.get("/api/admin/agent-clients")
 
@@ -705,14 +554,6 @@ class APIHelper:
             params["language"] = language
         return self.client.post("/api/admin/articles", params=params, json=data)
 
-    def get_admin_resumes(self, page: int | None = 1, page_size: int | None = 20) -> Response:
-        params: dict[str, int] = {
-            key: value
-            for key, value in (("page", page), ("pageSize", page_size))
-            if value is not None
-        }
-        return self.client.get("/api/admin/resumes", params=params)
-
     def get_admin_accounts(self, page: int | None = 1, page_size: int | None = 20) -> Response:
         params: dict[str, int] = {
             key: value
@@ -753,24 +594,6 @@ class APIHelper:
 
     def post_revoke_other_admin_account_sessions(self, username: str) -> Response:
         return self.client.post(f"/api/admin/accounts/{username}/sessions/revoke-others")
-
-    def post_create_resume(self, data: dict[str, Any]) -> Response:
-        return self.client.post("/api/admin/resumes", json=data)
-
-    def get_admin_resume(self, resume_id: int | str) -> Response:
-        return self.client.get(f"/api/admin/resumes/{self._entity_id(resume_id)}")
-
-    def put_update_resume(self, resume_id: int | str, data: dict[str, Any]) -> Response:
-        return self.client.put(f"/api/admin/resumes/{self._entity_id(resume_id)}", json=data)
-
-    def post_export_resume(self, resume_id: int | str, data: dict[str, Any]) -> Response:
-        return self.client.post(
-            f"/api/admin/resumes/{self._entity_id(resume_id)}/export",
-            json=data,
-        )
-
-    def delete_resume(self, resume_id: int | str) -> Response:
-        return self.client.delete(f"/api/admin/resumes/{self._entity_id(resume_id)}")
 
     def put_update_article(
         self,

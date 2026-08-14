@@ -55,14 +55,6 @@ server {
        root /var/www/certbot;
    }
 
-   location = /knowledge-private {
-       return 404;
-   }
-
-   location ^~ /knowledge-private/ {
-       return 404;
-   }
-
    location / {
        return 301 https://$host$request_uri;
    }
@@ -338,14 +330,6 @@ server {
 
     proxy_read_timeout 300;
     proxy_send_timeout 300;
-
-    location = /knowledge-private {
-        return 404;
-    }
-
-    location ^~ /knowledge-private/ {
-        return 404;
-    }
 
     location / {
         proxy_pass http://minio_api;

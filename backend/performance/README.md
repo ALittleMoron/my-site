@@ -73,7 +73,6 @@ job service instead. `realistic` continues to start or reuse the normal test dat
 | Article folders / articles | 20 / 5k | 200 / 200k |
 | Tags / article-tag links | 500 / 20k | 30k / 500k |
 | Daily analytics / reactions | 100k / 10k | 2m / 500k |
-| Resumes | 250 | 50k |
 | Matrix items / resources / links | 10k / 5k / 25k | 200k / 200k / 500k |
 | Queued questions / Agent audit events | 5k / 10k | 50k / 250k |
 | Matrix sheets × sections × subsections | 20 × 8 × 12 | 20 × 8 × 12 |

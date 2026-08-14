@@ -7,7 +7,6 @@
         type="button"
         class="foldable-tree-item foldable-tree-root-item btn btn-sm w-100 text-start"
         [attr.data-testid]="itemTestId()"
-        [style.display]="item.hidden ? 'none' : ''"
         role="treeitem"
         [class.active]="selectedItemKey() === item.key"
         [class.foldable-tree-item-success]="selectedItemKey() === item.key"
@@ -27,7 +26,7 @@
       </button>
     }
     @for (section of sections(); track section.key) {
-      <div class="foldable-tree-section-group" [style.display]="section.hidden ? 'none' : ''">
+      <div class="foldable-tree-section-group">
         <button
           type="button"
           class="btn btn-sm w-100 d-flex justify-content-between align-items-center text-start foldable-tree-section"
@@ -59,7 +58,6 @@
                 type="button"
                 class="foldable-tree-item btn btn-sm w-100 text-start"
                 [attr.data-testid]="itemTestId()"
-                [style.display]="item.hidden ? 'none' : ''"
                 role="treeitem"
                 [class.active]="selectedItemKey() === item.key"
                 [class.foldable-tree-item-success]="selectedItemKey() === item.key"

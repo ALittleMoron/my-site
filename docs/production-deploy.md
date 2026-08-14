@@ -176,70 +176,15 @@ Each task run locks and rechecks at most 100 oldest eligible metadata rows from 
 namespace. It deletes the MinIO object before deleting its database metadata. A MinIO error keeps
 the row and timestamp for the next scheduled retry, while a reference discovered during the final
 check clears the stale orphan marker. The task deliberately does not list the bucket or remove
-objects without database metadata, and it never scans the private `knowledge-private` bucket;
-object/metadata reconciliation remains a separate operational procedure. Run exactly one TaskIQ
-scheduler process, as defined by Compose, while workers may be scaled independently.
-
-## Private Knowledge Bucket
-
-Knowledge People photos and attachments use the separate `knowledge-private` bucket. It must not
-inherit the public `media` bucket policy or become a browser-facing origin. The backend returns a
-protected API content path and streams objects through its authenticated internal S3 client; it
-does not return public or presigned MinIO URLs for this bucket.
-
-`make run` executes the one-shot `backend-init` service after PostgreSQL and MinIO are healthy. Its
-`litestar initbuckets` CLI command initializes both `media` and `knowledge-private`; for the private
-bucket it creates the bucket when absent and deletes any bucket policy and bucket CORS
-configuration. Do not replace this with a public MinIO bootstrap policy. If initialization fails,
-the deployment must not be treated as ready even if old application containers are still serving.
-
-After initialization and after every restore:
-
-- Confirm `/api/healthcheck` and `/api/healthcheck/ready` succeed through the public edge.
-- Through the VPN-only MinIO Console, confirm `knowledge-private` exists, anonymous access is
-  disabled, and no bucket CORS configuration is present.
-- From a public network, confirm both
-  `https://s3.<APP_DOMAIN>/knowledge-private` and
-  `https://s3.<APP_DOMAIN>/knowledge-private/probe` return `404`. Test the exact and prefix paths;
-  a single-object check is not sufficient.
-- As an owner/admin, read a known photo and attachment through
-  `/api/admin/knowledge/files/{fileId}/content`; confirm the response is authorized, streamed, and
-  carries `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
-- Exercise a failed upload transaction and confirm its newly written object is removed, while a
-  successful replacement removes the superseded object only after the database commit.
-- Confirm `/api/admin/knowledge/*` handlers are absent from `/api/docs/openapi.json`.
-- Run `make security-infra` before production rollout when the MinIO or nginx contour changes.
-
-### Backup And Restore
-
-PostgreSQL knowledge metadata and the `knowledge-private` objects form one logical dataset.
-Databasus covers PostgreSQL, but a database backup alone cannot restore photos or attachments.
-Back up the MinIO data volume or the bucket through an authenticated object-storage backup with
-encryption, access control, retention, and deletion handling appropriate for personal data. Never
-copy private objects into the public `media` bucket as a backup shortcut.
-
-Use coordinated recovery points where practical and record the PostgreSQL snapshot and object
-backup identifiers together. Test recovery in an isolated environment:
-
-1. Restore PostgreSQL and private objects.
-2. Run the normal migration and bucket initialization path through `make run`; initialization must
-   remove any restored public policy/CORS state from `knowledge-private`.
-3. Reconcile `knowledge__knowledge_file_model.relative_path` values with restored objects. Report
-   missing metadata, missing objects, and orphan objects separately; do not delete discrepancies
-   until the recovery point is understood.
-4. Sample an authorized photo and attachment read, then repeat the public exact/prefix `404` checks.
-5. Record restore duration, selected recovery point, integrity results, authorization results, and
-   cleanup exceptions.
-
-Private-bucket backup/restore automation and recurring restore tests are tracked as future work.
-Until an isolated restore succeeds, backup presence is not proof of recoverability.
+objects without database metadata; object/metadata reconciliation remains a separate operational
+procedure. Run exactly one TaskIQ scheduler process, as defined by Compose, while workers may be
+scaled independently.
 
 ## Admin Operational Tools
 
-Owners and administrators use the foldable panel inside the horizontal Tools tab on
-`/admin-panel/dashboard`; the legacy `/admin-panel/workspace/tools` URL redirects there. The backing
-handlers stay under `/api/admin/tools/*` and enforce the same team-management authorization in the
-backend. The widget
+Owners and administrators use the operational tools widget directly on `/admin-panel/dashboard`;
+the legacy `/admin-panel/workspace/tools` URL redirects there. The backing handlers stay under
+`/api/admin/tools/*` and enforce the same team-management authorization in the backend. The widget
 reports response-cache configuration and per-domain key/TTL metrics for `i18n`, `articles`, and
 `competency_matrix`, plus expired and soon-expiring auth-session counts. Cache inspection uses
 namespace-scoped Valkey scans, so it does not enumerate TaskIQ, auth, or other application keys.

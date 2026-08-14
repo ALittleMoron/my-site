@@ -2,7 +2,7 @@
 
 ## Project
 
-Portfolio and articles site with a knowledge database
+Portfolio and articles site
 
 ## Stack
 

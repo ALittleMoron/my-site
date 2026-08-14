@@ -22,7 +22,8 @@ describe('UpdatesPageComponent', () => {
           'updates.seo.description': 'Публичный журнал изменений сайта.',
           'updates.hero.kicker': 'Журнал изменений',
           'updates.hero.title': 'Обновления сайта',
-          'updates.hero.lead': 'Крупные изменения сайта и базы знаний, сгруппированные по месяцам.',
+          'updates.hero.lead':
+            'Крупные изменения сайта-портфолио и раздела статей, сгруппированные по месяцам.',
           'updates.tag.backend': 'Backend',
           'updates.tag.frontend': 'Frontend',
           'updates.tag.content': 'Контент',
@@ -67,7 +68,7 @@ describe('UpdatesPageComponent', () => {
     const badges = fixture.nativeElement.querySelectorAll('.badge');
 
     expect(text).toContain('Обновления сайта');
-    expect(text).toContain('Крупные изменения сайта и базы знаний');
+    expect(text).toContain('Крупные изменения сайта-портфолио и раздела статей');
     expect(months.length).toBeGreaterThan(0);
     expect(entries.length).toBeGreaterThan(0);
     expect(monthLabel?.getAttribute('datetime')).toMatch(/^\d{4}-\d{2}$/);

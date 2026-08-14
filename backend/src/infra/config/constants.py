@@ -18,7 +18,6 @@ class PathConstants:
 
 class MinioBucketNamesConstants:
     media: Literal["media"] = "media"
-    knowledge_private: Literal["knowledge-private"] = "knowledge-private"
 
 
 class ValkeyDatabaseConstants:
@@ -106,86 +105,6 @@ class FilesConstants:
     )
 
 
-class KnowledgeFilesConstants:
-    attachment_mime_types: frozenset[str] = frozenset({"*/*"})
-    photo_mime_types: frozenset[str] = frozenset(
-        {"image/jpeg", "image/png", "image/webp"},
-    )
-    attachment_max_size_bytes: int = 20 * 1024 * 1024
-    photo_max_size_bytes: int = 5 * 1024 * 1024
-    multipart_overhead_max_size_bytes: int = 64 * 1024
-    attachment_request_max_body_size_bytes: int = (
-        attachment_max_size_bytes + multipart_overhead_max_size_bytes
-    )
-    photo_request_max_body_size_bytes: int = (
-        photo_max_size_bytes + multipart_overhead_max_size_bytes
-    )
-    original_name_max_length: int = 255
-    mime_type_max_length: int = 255
-    photo_max_width_px: int = 2048
-    photo_max_height_px: int = 2048
-    photo_webp_quality: int = 82
-    photo_webp_method: int = 6
-    stream_chunk_size_bytes: int = 64 * 1024
-    attachment_folder: str = "attachments"
-    person_photo_folder: str = "person-photos"
-    content_disposition_header_name: Literal["Content-Disposition"] = "Content-Disposition"
-    content_type_options_header_name: Literal["X-Content-Type-Options"] = "X-Content-Type-Options"
-    content_type_options_header_value: Literal["nosniff"] = "nosniff"
-    cache_control_header_name: Literal["Cache-Control"] = "Cache-Control"
-    no_store_header_value: Literal["no-store"] = "no-store"
-
-
-class RequestLoggingConstants:
-    private_knowledge_path_prefix: Literal["/api/admin/knowledge"] = "/api/admin/knowledge"
-    private_knowledge_safe_path: Literal["/api/admin/knowledge/{private}"] = (
-        "/api/admin/knowledge/{private}"
-    )
-
-
-class ResumeExportConstants:
-    fonts_dir: Path = PathConstants.infra_dir / "resume_export" / "fonts"
-    font_regular_path: Path = fonts_dir / "NotoSans-Regular.ttf"
-    font_bold_path: Path = fonts_dir / "NotoSans-Bold.ttf"
-    font_license_path: Path = fonts_dir / "OFL.txt"
-    font_regular_name: Literal["NotoSans"] = "NotoSans"
-    font_bold_name: Literal["NotoSans-Bold"] = "NotoSans-Bold"
-    content_disposition_header_name: Literal["Content-Disposition"] = "Content-Disposition"
-    pdf_media_type: Literal["application/pdf"] = "application/pdf"
-    docx_media_type: Literal[
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    pdf_extension: Literal["pdf"] = "pdf"
-    docx_extension: Literal["docx"] = "docx"
-    pdf_horizontal_margin_mm: int = 17
-    pdf_vertical_margin_mm: int = 14
-    pdf_title_font_size: int = 16
-    pdf_role_font_size: int = 10
-    pdf_contact_font_size: int = 8
-    pdf_section_font_size: int = 10
-    pdf_item_title_font_size: int = 9
-    pdf_body_font_size: int = 8
-    pdf_title_leading: int = 19
-    pdf_role_leading: int = 13
-    pdf_contact_leading: int = 10
-    pdf_section_leading: int = 12
-    pdf_body_leading: int = 11
-    word_font_name: Literal["Arial"] = "Arial"
-    word_margin_inches: float = 0.55
-    word_title_font_size_pt: int = 16
-    word_role_font_size_pt: int = 10
-    word_contact_font_size_pt: int = 8
-    word_section_font_size_pt: int = 10
-    word_item_title_font_size_pt: int = 9
-    word_body_font_size_pt: int = 9
-    word_name_style_id: Literal["ResumeName"] = "ResumeName"
-    word_role_style_id: Literal["ResumeRole"] = "ResumeRole"
-    word_contact_style_id: Literal["ResumeContact"] = "ResumeContact"
-    word_section_style_id: Literal["ResumeSection"] = "ResumeSection"
-    word_item_title_style_id: Literal["ResumeItemTitle"] = "ResumeItemTitle"
-    word_body_style_id: Literal["ResumeBody"] = "ResumeBody"
-
-
 class SearchConstants:
     min_trigram_fuzzy_query_length: int = 6
 
@@ -216,9 +135,6 @@ class AdminValidationConstants:
     email_max_length: int = 254
     article_content_max_length: int = 100_000
     matrix_long_text_max_length: int = 20_000
-    resume_long_text_max_length: int = 10_000
-    knowledge_description_max_length: int = 100_000
-    knowledge_relationship_note_max_length: int = 10_000
 
 
 class AuthConstants:
@@ -260,9 +176,6 @@ class Constants:
     response_cache: ResponseCacheConstants = ResponseCacheConstants()
     taskiq: TaskiqConstants = TaskiqConstants()
     files: FilesConstants = FilesConstants()
-    knowledge_files: KnowledgeFilesConstants = KnowledgeFilesConstants()
-    request_logging: RequestLoggingConstants = RequestLoggingConstants()
-    resume_export: ResumeExportConstants = ResumeExportConstants()
     search: SearchConstants = SearchConstants()
     question_queue_import: QuestionQueueImportConstants = QuestionQueueImportConstants()
     admin_validation: AdminValidationConstants = AdminValidationConstants()

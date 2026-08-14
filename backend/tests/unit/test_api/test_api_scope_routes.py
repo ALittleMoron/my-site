@@ -10,9 +10,8 @@ from core.i18n.enums import LanguageEnum
 from entrypoints.litestar.api.competency_matrix.endpoints import (
     AdminCompetencyMatrixApiController,
 )
-from entrypoints.litestar.api.resumes.endpoints import AdminResumesApiController
 from entrypoints.litestar.api.routers import api_router
-from entrypoints.litestar.guards import content_manager_guard, team_manager_guard
+from entrypoints.litestar.guards import content_manager_guard
 from tests.test_cases import ApiTestCase
 
 
@@ -95,17 +94,6 @@ class TestApiScopeRoutes(ApiTestCase):
 
 
 class TestApiScopeRouteMetadata:
-    def test_resumes_admin_urls_are_not_exposed_under_public_api(self) -> None:
-        route_paths = _api_route_paths()
-
-        assert AdminResumesApiController.guards == [team_manager_guard]
-        assert "/api/resumes" not in route_paths
-        assert "/api/resumes/{resume_id:str}" not in route_paths
-        assert "/api/resumes/{resume_id:str}/export" not in route_paths
-        assert "/api/admin/resumes" in route_paths
-        assert "/api/admin/resumes/{resume_id:str}" in route_paths
-        assert "/api/admin/resumes/{resume_id:str}/export" in route_paths
-
     def test_matrix_admin_urls_are_not_exposed_under_public_api(self) -> None:
         route_paths = _api_route_paths()
 

@@ -1,8 +1,8 @@
 # Security Threat Model
 
-This document records the public-safe threat model for the portfolio, articles, and knowledge
-database site. It is intended to support the security audit checklist in `docs/TODO.md` and to make
-security assumptions explicit for future changes.
+This document records the public-safe threat model for the portfolio and articles site. It is
+intended to support the security audit checklist in `docs/TODO.md` and to make security assumptions
+explicit for future changes.
 
 It deliberately avoids secrets, exact private host details, production IP addresses, and exploit
 playbooks. Operational runbooks remain in narrower deployment documents where needed.
@@ -31,8 +31,6 @@ In scope:
   routing.
 - GitHub Actions CI/deploy path and runtime Compose deployment on the production host.
 - Public MinIO object endpoint for intentionally published file objects.
-- Private per-author People records, relationship graphs, photos, and attachments in the knowledge
-  database and the separate non-public `knowledge-private` bucket.
 - VPN-only internal web panels for MinIO Console and Databasus.
 - VPN-only, mTLS-authenticated private Agent API and local stdio MCP bridge for constrained
   competency-matrix draft authoring.
@@ -48,12 +46,11 @@ Out of scope for this version:
 
 | Asset | What must be protected |
 | --- | --- |
-| Public content | Integrity and availability of articles, competency matrix content, resume exports, sitemap, robots.txt, and the public case-study/updates pages. |
-| Admin-authored content | Integrity of unpublished drafts, article metadata, matrix structure, file metadata, and resume content. |
+| Public content | Integrity and availability of articles, competency matrix content, sitemap, robots.txt, and the public case-study/updates pages. |
+| Admin-authored content | Integrity of unpublished drafts, article metadata, matrix structure, and file metadata. |
 | User accounts | Password hashes, account roles, active/inactive state, owner/admin/moderator boundaries, bearer tokens, server-side session state, and coarse session metadata. |
 | Database data | PostgreSQL content, auth records, analytics aggregates, file metadata, migrations, and relational integrity. |
 | Object storage | Uploaded images/files, object metadata, public object URLs, and MinIO root credentials. |
-| Private knowledge data | Per-author names, contact details, birthdays, notes, relationship graph, tags, protected photo/attachment metadata and bytes, and the fact that a person is recorded. |
 | Backups | Backup confidentiality, integrity, availability, and restore confidence. |
 | Runtime secrets | Application secret, PASETO private key, database password, MinIO keys, Sentry DSN, owner bootstrap password, TLS private key, and deploy SSH key. |
 | CI/deploy path | GitHub Actions workflows, protected production environment, deploy renderer, source sync, and image tags. |
@@ -70,7 +67,6 @@ Out of scope for this version:
 | Bot or scraper | Enumerate content, send high-volume requests, spam contact/suggestion endpoints, or increase analytics counters. |
 | Credential attacker | Guess, stuff, phish, or replay owner/admin/moderator credentials or bearer tokens. |
 | Malicious content editor | Abuse legitimate content permissions to publish unsafe, misleading, or destructive content. |
-| Curious or compromised team manager | Guess another author's knowledge IDs, cross-link foreign records, or retrieve private person files. |
 | Compromised maintainer device or token | Use VPN, GitHub, SSH, or browser auth access as the maintainer. |
 | Network attacker | Observe or alter traffic, downgrade transport security, or reach internal panels. |
 | Dependency or supply-chain attacker | Introduce vulnerable, malicious, or unexpected code through dependencies, images, or build tooling. |
@@ -144,10 +140,6 @@ Important boundaries:
   Secure, SameSite=Lax session cookie under `/api/auth` is used only to refresh access tokens,
   refresh the session's idle expiration within the session's absolute lifetime cap, and revoke the
   current session on logout.
-- Knowledge People and Dates APIs plus the standalone Calendar projection are owner/admin-only,
-  absent from OpenAPI, uncached, and private per `author_username`. The backend is the only
-  application reader of `knowledge-private`; public MinIO routing denies the bucket's exact path
-  and every path below it.
 - Auth sessions store server-side secret hashes, current effective expiration timestamps, original
   absolute expiration timestamps, last-used timestamps, auth method, and coarse privacy-safe device
   labels derived from the request user agent. They do not store raw IP addresses, raw user-agent
@@ -207,29 +199,7 @@ Important boundaries:
    queue item for at most two hours, treats queue/web text as untrusted data, reads matrix context,
    references an existing resource ID or a new HTTPS URL without server-side fetching, and
    atomically creates a server-forced draft. Each action receives a privacy-safe audit record.
-15. Private knowledge read/write: an owner/admin sends an authenticated request to
-   `/api/admin/knowledge/*`; the backend derives `author_username` from the token, includes it in
-   every database predicate, and returns only that author's item graph. Protected file reads repeat
-   the author check, stream bytes from the internal MinIO client, and return `no-store` responses;
-   replacement/deletion removes obsolete objects only after the database commit.
-16. Private Calendar read: an owner/admin sends an authenticated request to `/api/admin/calendar`;
-   the backend derives `author_username` from the token, reads only that author's People birthdays
-   and memorable Dates for the requested window, and returns a `no-store`, OpenAPI-hidden
-   projection to the CSR-only Dashboard.
-
 ## Threats, Controls, And Residual Risk
-
-### Private Knowledge Data
-
-| Threat | Existing controls | Residual risk / follow-up |
-| --- | --- | --- |
-| A caller guesses a Date, Person, relationship, tag, or file ID belonging to another author. | Every knowledge storage lookup and mutation includes `author_username`; composite item/author, Date/Person, tag/author, relationship-type/author, and file/author constraints prevent cross-author graph construction; wrong-kind, foreign, and absent IDs share not-found behavior; IDOR paths are covered at storage, use-case, and API levels. | A backend compromise, SQL injection, erroneous unrestricted query, or direct database access bypasses application predicates. The application and database use the main backend identity rather than a separately contained knowledge-data role. |
-| Private photos or attachments become reachable through the public MinIO endpoint. | Private objects use a separate `knowledge-private` bucket through the authenticated internal S3 client; initialization removes bucket policy and CORS; responses contain only a protected backend `contentPath`, never a public or presigned URL; public nginx returns `404` for both the exact bucket path and its prefix. | MinIO root credentials, host access, private-network compromise, or a future routing/policy regression can expose objects. Verify policy/CORS and public exact/prefix denial after deploy and restore. |
-| Search terms, contact data, filenames, or object keys leak through logs, URLs, caches, SSR, or API discovery. | The main nginx access log uses method, a normalized URI label, protocol, and status without raw request/query values; nginx and Litestar replace every `/api/admin/knowledge/*` concrete path with one safe label and omit its path parameters; knowledge responses use `Cache-Control: no-store`; the workspace is CSR-only and excluded from Angular transfer cache; controllers are excluded from OpenAPI; file responses do not reveal MinIO URLs. | Infrastructure with privileged traffic/storage access or application exception paths can still observe sensitive metadata. Do not put private values in path segments or add them to metric labels, exception messages, audit fields, or future log fields. |
-| A malicious image or active attachment exploits decoding or browser content handling. | Photos are limited to JPEG/PNG/WebP and 5 MiB, fully decoded with Pillow, MIME-verified, rejected when animated or decompression-bomb-like, bounded to 2048×2048, and re-encoded to WebP. Attachments are limited to 20 MiB and forced to `application/octet-stream` attachment delivery. File responses add `nosniff` and sanitized `Content-Disposition`; Markdown preview uses the centralized sanitizer and People disables inline image uploads. | Image decoders and authorized downloads can still contain unknown vulnerabilities or malicious documents opened in external applications. Keep Pillow patched, do not inline arbitrary attachments, and treat downloaded files as untrusted. |
-| Private data leaks through SSR, OpenAPI, browser object URLs, or intermediary/browser caches. | People, Dates, and Dashboard routes are protected CSR routes; Knowledge and Calendar endpoints are absent from OpenAPI and carry `no-store`; protected blobs are fetched only after authorization and browser object URLs are revoked when replaced or no longer needed. | Browser/device compromise, malicious extensions, screenshots, memory inspection, or a successful XSS can read data available to the authenticated session. CSP and URL revocation reduce exposure but cannot protect a compromised endpoint. |
-| A failed transaction deletes a still-referenced object, or an uploaded object becomes orphaned after rollback/commit failure. | Replacement/deletion cleanup remains post-commit and best effort, so rollback preserves referenced bytes. A successful new upload registers a separate request-scoped rollback action that deletes only the new object when the request rolls back or commit fails; successful commit does not run it, and no-throw cleanup preserves the original failure. | Failed best-effort cleanup can still leave private orphan objects. Operational reconciliation, backup retention, and deletion verification remain necessary. |
-| Database, backup, or host media reveals private knowledge data. | Access is limited to authenticated application/operations contours; backups must be encrypted and non-public; MinIO and PostgreSQL have no public service ports. | People/Date fields and object bytes have no application-layer encryption. Database administrators, MinIO credentials, backup readers, or full host compromise can read them; encryption-at-rest supplied by the host/storage provider does not create per-record separation from those actors. |
 
 ### Spoofing
 
@@ -246,12 +216,12 @@ Important boundaries:
 
 | Threat | Existing controls | Residual risk / follow-up |
 | --- | --- | --- |
-| Unauthorized user changes articles, matrix questions, files, resumes, or team accounts. | Admin APIs live under `/api/admin/*`; guards enforce content/team boundaries; backend use cases enforce privileged behavior instead of relying on hidden UI controls. | New handlers must keep the explicit public/admin/internal classification and matching backend authorization tests. |
+| Unauthorized user changes articles, matrix questions, files, or team accounts. | Admin APIs live under `/api/admin/*`; guards enforce content/team boundaries; backend use cases enforce privileged behavior instead of relying on hidden UI controls. | New handlers must keep the explicit public/admin/internal classification and matching backend authorization tests. |
 | Malicious editor publishes unsafe Markdown or links. | Admin write access is role-limited; public rendering uses the centralized sanitized Markdown/wiki-link renderer; CSP blocks broad inline script execution on normal public routes. | Authorized editors can still publish misleading content or harmful external text. Treat account governance and review discipline as part of the control. |
 | Cross-site request tricks browser-sent auth cookies into refreshing or revoking a session. | Cookie-authenticated auth endpoints require `X-CSRF-Guard: 1`, reject `Sec-Fetch-Site: cross-site`, keep SameSite=Lax/Secure/HttpOnly cookies, and do not make admin APIs cookie-authenticated. | Fetch Metadata is a browser signal; keep no CORS expansion for auth endpoints and reassess CSRF controls before adding any cookie-authenticated state-changing API. |
 | Deploy or runtime config is modified unexpectedly. | Deploy is manual through GitHub `workflow_dispatch`, should be restricted to `main`, waits for protected production environment approval, and requires explicit runtime values. Locally built runtime images use the required `IMAGE_TAG`. | A compromised GitHub account, approved malicious commit, or host access can tamper with production. Keep branch/environment protections and review deploy changes carefully. |
 | Uploaded file metadata or object URLs are abused. | File operations go through admin endpoints and backend-owned metadata; public URLs are computed read-model fields, not write-payload fields. MinIO CORS is restricted to the app origin. | Public object endpoint intentionally serves published objects. Continue to validate upload types/processing when expanding file support. |
-| Cleanup removes public media too early, deletes a newly reused file, or loses retry state after an object-store failure. | Eligibility uses the strict `orphaned_at < now - FILES_ORPHAN_RETENTION_SECONDS` boundary, preserving the complete configured grace period. Each run locks at most 100 oldest database-backed `media` rows with `FOR UPDATE SKIP LOCKED`, rechecks article cover and Markdown usages, and clears a stale marker when a usage appears. Attach, detach, explicit file deletion, deduplicated upload, and cleanup transitions serialize on the file row; article update and deletion also lock and reread the article before calculating file transitions. MinIO deletion happens before metadata deletion; a MinIO failure leaves both metadata and `orphaned_at` for retry. The task never lists buckets, deletes metadata-free objects, or scans `knowledge-private`. | Scheduling means eligible files may remain beyond the configured retention period, and repeated MinIO or worker failures can accumulate public orphans. A database commit or connection failure after successful object deletion can leave metadata pointing to a missing object; row locking prevents concurrent reuse only while the transaction is active. Monitor scheduler/worker health and storage growth, keep backups, and use a separately reviewed reconciliation process for missing or metadata-free objects. |
+| Cleanup removes public media too early, deletes a newly reused file, or loses retry state after an object-store failure. | Eligibility uses the strict `orphaned_at < now - FILES_ORPHAN_RETENTION_SECONDS` boundary, preserving the complete configured grace period. Each run locks at most 100 oldest database-backed `media` rows with `FOR UPDATE SKIP LOCKED`, rechecks article cover and Markdown usages, and clears a stale marker when a usage appears. Attach, detach, explicit file deletion, deduplicated upload, and cleanup transitions serialize on the file row; article update and deletion also lock and reread the article before calculating file transitions. MinIO deletion happens before metadata deletion; a MinIO failure leaves both metadata and `orphaned_at` for retry. The task never lists buckets or deletes metadata-free objects. | Scheduling means eligible files may remain beyond the configured retention period, and repeated MinIO or worker failures can accumulate public orphans. A database commit or connection failure after successful object deletion can leave metadata pointing to a missing object; row locking prevents concurrent reuse only while the transaction is active. Monitor scheduler/worker health and storage growth, keep backups, and use a separately reviewed reconciliation process for missing or metadata-free objects. |
 | Prompt-injected queue or web text makes an agent exceed its task. | The five-tool allowlist has no shell, generic HTTP, SQL, publish, delete, or structure operation; queue text is explicitly untrusted; scopes and draft-only behavior are enforced server-side. | An ordinary agent workspace may still have separately approved shell, file, or connector capabilities. Prefer an isolated profile for queue work. |
 
 ### Repudiation
@@ -315,12 +285,6 @@ Important boundaries:
   and may touch only the declared response-cache domains or the shared expired-session cleanup use
   case. Cache metrics are non-transactional snapshots and must not be presented as a freshness or
   completeness guarantee.
-- Knowledge data uses typed common items plus normalized per-type extension tables. Every knowledge
-  query/mutation is author-scoped, private file reads go through the backend, public S3 denies
-  `knowledge-private`, and knowledge responses are not cached or server-rendered.
-- Calendar is a read-only cross-domain projection over author-scoped People and Dates storage
-  contracts; `/api/admin/calendar` is owner/admin-only, hidden from OpenAPI, `no-store`, and used
-  only by the CSR Dashboard.
 - User-authored Markdown/HTML must render only through the centralized sanitized renderer.
 - PostgreSQL, Valkey, MinIO, Databasus, backend, and frontend are reachable by Docker network name,
   not public service ports.
@@ -359,9 +323,6 @@ Important boundaries:
 8. A normally configured Codex workspace may retain separately approved shell, filesystem, web, or
    private-connector authority. The MCP boundary limits the site, not every capability of the local
    agent process; an isolated profile/workspace reduces this residual risk.
-9. Private People/Date data and protected object bytes are not encrypted at the application layer.
-   Backend, database, MinIO-root, backup-reader, or host compromise can disclose the complete
-   per-author dataset despite normal IDOR and edge controls.
 
 ## Maintenance Triggers
 
@@ -370,8 +331,6 @@ Update this threat model when any of these change:
 - Authentication mode, token storage, cookies/sessions, CSRF strategy, or role policy.
 - New public or admin HTTP route families.
 - New public file/object access paths or external origins in CSP.
-- Knowledge item types, author-isolation predicates, private file processing/streaming, or
-  `knowledge-private` bucket/routing/backup behavior.
 - New analytics, tracking, notification, subscription, or user-generated-content feature.
 - Backup, restore, deploy, hosting, network, or Docker/nginx routing changes.
 - Repository split, independent image publishing, or CI/deploy trust-boundary changes.

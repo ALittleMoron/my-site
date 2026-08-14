@@ -1,15 +1,15 @@
-# Knowledge Base Concept
+# Portfolio And Articles Site Concept
 
 ## Concept
 
-Knowledge base with articles, an interactive competency matrix, and an engineering case study.
+Portfolio and articles site with an interactive competency matrix and an engineering case study.
 Documents technical decisions through Clean Architecture, Angular, API-first backend design, and a modern DevOps stack.
 
 ## Audience
 
 - Colleagues and like-minded people in IT
 - Readers looking for practical engineering notes
-- The author as maintainer of the knowledge base and article archive
+- The author as maintainer of the portfolio and article archive
 
 ## Non-goals (will not build)
 
@@ -45,4 +45,4 @@ Documents technical decisions through Clean Architecture, Angular, API-first bac
 
 ## Goal
 
-Public knowledge base for IT colleagues and readers, plus an article archive and engineering notebook for continued development.
+Public portfolio for IT colleagues and readers, plus an article archive and engineering notebook for continued development.

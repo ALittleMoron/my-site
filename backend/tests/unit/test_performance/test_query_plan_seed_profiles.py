@@ -7,7 +7,6 @@ from sqlalchemy.dialects import postgresql
 from performance.query_plans import seed as query_plan_seed
 from performance.query_plans.models import (
     REALISTIC_PROFILE,
-    STRESS_PROFILE,
     QueryPlanProfile,
 )
 
@@ -20,14 +19,6 @@ class TestQueryPlanProfileSeed:
             (query_plan_seed.insert_auth_sessions, 500),
             (query_plan_seed.insert_article_folders, 20),
             (query_plan_seed.insert_article_analytics, 100_000),
-            (query_plan_seed.insert_resumes, 250),
-            (query_plan_seed.insert_knowledge_items, 5_000),
-            (query_plan_seed.insert_knowledge_dates, 5_000),
-            (query_plan_seed.insert_knowledge_tags, 500),
-            (query_plan_seed.insert_person_relationship_types, 100),
-            (query_plan_seed.insert_person_relationships, 20_000),
-            (query_plan_seed.insert_knowledge_date_person_links, 20_000),
-            (query_plan_seed.insert_knowledge_files, 10_000),
             (query_plan_seed.insert_competency_matrix_resource_links, 24_996),
         ],
     )
@@ -68,47 +59,6 @@ class TestQueryPlanProfileSeed:
         assert ", 100) < 80" in compiled
         assert ", 100) = 0" in compiled
 
-    async def test_people_seed_uses_explicit_broad_search_percentage(self) -> None:
-        connection = AsyncMock()
-
-        await query_plan_seed.insert_knowledge_items(
-            connection=connection,
-            profile=REALISTIC_PROFILE,
-        )
-
-        compiled = str(
-            connection.execute.await_args_list[0]
-            .args[0]
-            .compile(
-                dialect=postgresql.dialect(),
-                compile_kwargs={"literal_binds": True},
-            ),
-        )
-        assert "generate_series(1, 5000)" in compiled
-        assert ", 100) < 10" in compiled
-
-    @pytest.mark.parametrize("profile", [REALISTIC_PROFILE, STRESS_PROFILE])
-    async def test_knowledge_tag_links_reserve_deletable_tag(
-        self,
-        profile: QueryPlanProfile,
-    ) -> None:
-        connection = AsyncMock()
-
-        await query_plan_seed.insert_knowledge_item_tag_links(
-            connection=connection,
-            profile=profile,
-        )
-
-        statement = connection.execute.await_args_list[-1].args[0]
-        compiled = statement.compile(dialect=postgresql.dialect())
-        available_general_tag_count = (
-            profile.cardinalities.knowledge.tags
-            - query_plan_seed.KNOWLEDGE_GENERAL_TAG_START_NUMBER
-            + 1
-        )
-        assert available_general_tag_count in compiled.params.values()
-        assert query_plan_seed.KNOWLEDGE_GENERAL_TAG_START_NUMBER in compiled.params.values()
-
     async def test_agent_audit_seed_uses_profile_cardinality(self) -> None:
         connection = AsyncMock()
 
@@ -138,16 +88,6 @@ class TestQueryPlanProfileSeed:
             "insert_article_tag_links",
             "insert_article_analytics",
             "insert_article_reactions",
-            "insert_resumes",
-            "insert_knowledge_items",
-            "insert_knowledge_dates",
-            "insert_knowledge_tags",
-            "insert_knowledge_item_tag_links",
-            "insert_knowledge_date_tag_links",
-            "insert_person_relationship_types",
-            "insert_person_relationships",
-            "insert_knowledge_date_person_links",
-            "insert_knowledge_files",
             "insert_resources",
             "insert_competency_matrix_structure",
             "insert_competency_matrix_items",
