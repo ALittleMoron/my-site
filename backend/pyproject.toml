@@ -15,7 +15,7 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "sqlalchemy[asyncio,mypy]>=2.0.51",
     "sqlalchemy-dev-utils>=1.4.0",
-    "alembic>=1.19.0",
+    "alembic>=1.19.1",
     "pyseto>=1.10.0",
     "itsdangerous>=2.2.0",
     "structlog>=26.1.0",
@@ -48,12 +48,12 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.16.2",
+    "ruff>=0.16.3",
     "vulture>=2.16",
 ]
 local = [
     "ipython>=9.16.1",
-    "pre-commit>=4.6.1",
+    "pre-commit>=4.6.2",
 ]
 
 [tool.uv]
