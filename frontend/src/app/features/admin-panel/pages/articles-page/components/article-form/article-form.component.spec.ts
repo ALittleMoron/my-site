@@ -811,7 +811,7 @@ describe('ArticleFormComponent', () => {
     expect(fileInput.getAttribute('aria-describedby')).toContain('articleCoverImageReplaceHint');
     expect(removeButton?.getAttribute('aria-label')).toBe('Удалить обложку');
     expect(removeButton?.getAttribute('title')).toBe('Удалить обложку');
-    expect(removeButton?.textContent).toContain('×');
+    expect(removeButton?.textContent).toContain('−');
   });
 
   it('removes the cover from form state without saving and focuses the replacement input', () => {

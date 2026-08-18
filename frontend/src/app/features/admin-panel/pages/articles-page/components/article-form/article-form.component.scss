@@ -31,21 +31,6 @@
   z-index: 1;
   top: 0.5rem;
   right: 0.5rem;
-  display: inline-flex;
-  width: 2.5rem;
-  height: 2.5rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.article-cover-remove:focus-visible {
-  outline: 0.2rem solid var(--bs-body-bg);
-  outline-offset: 0.15rem;
-  box-shadow: 0 0 0 0.25rem rgba(var(--bs-danger-rgb), 0.35);
 }
 
 .article-cover-current-preview img {
@@ -73,7 +58,7 @@
   background: var(--bs-tertiary-bg);
 }
 
-.article-tag-remove {
+.article-remove-button {
   display: inline-flex;
   width: 1.75rem;
   height: 1.75rem;
@@ -88,8 +73,8 @@
   line-height: 1;
 }
 
-.article-tag-remove:hover,
-.article-tag-remove:focus-visible {
+.article-remove-button:hover,
+.article-remove-button:focus-visible {
   color: var(--bs-white);
   background-color: var(--bs-danger);
   border-color: var(--bs-danger);

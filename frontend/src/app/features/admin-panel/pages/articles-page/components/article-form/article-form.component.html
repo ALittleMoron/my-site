@@ -105,14 +105,14 @@
         >
           <button
             type="button"
-            class="article-cover-remove btn btn-danger rounded-circle"
+            class="article-cover-remove article-remove-button btn btn-sm rounded-circle"
             data-testid="article-cover-remove"
             [disabled]="coverImageUploading()"
             [attr.aria-label]="'articles.form.coverImageRemove' | t"
             [attr.title]="'articles.form.coverImageRemove' | t"
             (click)="removeCoverImage()"
           >
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">−</span>
           </button>
           @if (coverImagePreviewUrl(); as coverImageUrl) {
             <img
@@ -412,7 +412,7 @@
             <span>{{ tag.name }}</span>
             <button
               type="button"
-              class="article-tag-remove btn btn-sm rounded-circle"
+              class="article-remove-button btn btn-sm rounded-circle"
               [attr.data-testid]="'article-tag-remove-' + tag.id"
               [attr.aria-label]="'articles.tags.removeFromArticle' | t: { name: tag.name }"
               [attr.title]="'articles.tags.removeFromArticle' | t: { name: tag.name }"
