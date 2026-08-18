@@ -69,7 +69,7 @@
       }
     </div>
     <div class="col-md-6">
-      <label class="form-label" for="articleCoverImageFile">
+      <label id="articleCoverImageLabel" class="form-label d-block" for="articleCoverImageFile">
         {{
           (hasCoverImage() ? 'articles.form.coverImageReplace' : 'articles.form.coverImageFile') | t
         }}
@@ -78,13 +78,39 @@
         #coverImageInput
         id="articleCoverImageFile"
         type="file"
-        class="form-control"
+        hidden
         accept="image/*"
         [disabled]="coverImageUploading()"
-        [attr.aria-busy]="coverImageUploading() ? 'true' : null"
-        [attr.aria-describedby]="coverImageDescriptionIds()"
         (change)="uploadCoverImage($event)"
       />
+      <div class="input-group" role="group" aria-labelledby="articleCoverImageLabel">
+        <button
+          #coverImageButton
+          type="button"
+          class="btn btn-outline-secondary"
+          data-testid="article-cover-file-button"
+          [disabled]="coverImageUploading()"
+          [attr.aria-busy]="coverImageUploading() ? 'true' : null"
+          [attr.aria-describedby]="coverImageDescriptionIds()"
+          (click)="coverImageInput.click()"
+        >
+          {{ 'articles.form.coverImageChooseFile' | t }}
+        </button>
+        <span
+          id="articleCoverImageFileStatus"
+          class="form-control article-cover-file-status"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="article-cover-file-status"
+        >
+          @if (coverImageFileName(); as fileName) {
+            {{ fileName }}
+          } @else {
+            {{ 'articles.form.coverImageNoFileSelected' | t }}
+          }
+        </span>
+      </div>
       @if (hasCoverImage()) {
         <div id="articleCoverImageReplaceHint" class="form-text">
           {{ 'articles.form.coverImageReplaceHint' | t }}

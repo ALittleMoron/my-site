@@ -152,6 +152,7 @@ export class ArticleFormComponent implements OnInit {
   readonly previewBundleVersion = signal(0);
   readonly formSubmitted = signal(false);
   readonly coverImagePreviewUrl = signal<string | null>(null);
+  readonly coverImageFileName = signal('');
   readonly coverImageUploading = signal(false);
   readonly coverImageUploadError = signal<string | null>(null);
   readonly validationLimits = ADMIN_VALIDATION_LIMITS;
@@ -219,10 +220,10 @@ export class ArticleFormComponent implements OnInit {
   readonly formSnapshot = signal(this.form.getRawValue());
   readonly hasCoverImage = computed(() => this.formSnapshot().coverImageFileId.trim().length > 0);
   readonly coverImageDescriptionIds = computed(() => {
-    const ids: string[] = [];
+    const ids = ['articleCoverImageFileStatus'];
     if (this.hasCoverImage()) ids.push('articleCoverImageReplaceHint');
     if (this.coverImageUploadError() !== null) ids.push('articleCoverImageUploadError');
-    return ids.length === 0 ? null : ids.join(' ');
+    return ids.join(' ');
   });
   readonly displayedSelectedTags = computed(() =>
     this.selectedTags()
@@ -234,6 +235,7 @@ export class ArticleFormComponent implements OnInit {
   private readonly folderPicker = viewChild(ArticleFolderPickerComponent);
   private readonly tagSearchInput = viewChild<ElementRef<HTMLInputElement>>('tagSearchInput');
   private readonly coverImageInput = viewChild<ElementRef<HTMLInputElement>>('coverImageInput');
+  private readonly coverImageButton = viewChild<ElementRef<HTMLButtonElement>>('coverImageButton');
 
   private readonly authoringState = computed(() => ({
     form: this.formSnapshot(),
@@ -381,6 +383,7 @@ export class ArticleFormComponent implements OnInit {
     const files = input.files;
     const file = files?.item?.(0) ?? files?.[0];
     if (!file) return;
+    this.coverImageFileName.set(file.name);
     this.coverImageUploading.set(true);
     this.coverImageUploadError.set(null);
     this.mediaUpload
@@ -406,7 +409,7 @@ export class ArticleFormComponent implements OnInit {
           this.coverImageUploadError.set(
             this.i18n.translate('articles.form.coverImageUploadError'),
           );
-          input.value = '';
+          this.clearCoverImageSelection();
         },
       });
   }
@@ -426,12 +429,8 @@ export class ArticleFormComponent implements OnInit {
     this.form.markAsDirty();
     this.coverImagePreviewUrl.set(null);
     this.coverImageUploadError.set(null);
-
-    const input = this.coverImageInput()?.nativeElement;
-    if (input !== undefined) {
-      input.value = '';
-      input.focus();
-    }
+    this.clearCoverImageSelection();
+    this.coverImageButton()?.nativeElement.focus();
   }
 
   selectTag(tag: ArticleTag): void {
@@ -569,6 +568,7 @@ export class ArticleFormComponent implements OnInit {
   }
 
   private applyArticle(article: ArticleDetail | null): void {
+    untracked(() => this.clearCoverImageSelection());
     if (article === null) {
       this.slugEdited = false;
       this.form.reset({
@@ -632,6 +632,12 @@ export class ArticleFormComponent implements OnInit {
     this.selectedTags.set(article.tags);
     this.clearTagSearch();
     untracked(() => this.mainUnsavedSource?.commit());
+  }
+
+  private clearCoverImageSelection(): void {
+    this.coverImageFileName.set('');
+    const input = this.coverImageInput()?.nativeElement;
+    if (input !== undefined) input.value = '';
   }
 
   private localizedTags(language: LanguageCode): ArticleTag[] {

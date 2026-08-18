@@ -13,6 +13,13 @@
   box-shadow: 0 0 0 0.25rem rgba(var(--bs-danger-rgb), 0.25);
 }
 
+.article-cover-file-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .article-cover-current-preview {
   position: relative;
   max-width: min(100%, 420px);

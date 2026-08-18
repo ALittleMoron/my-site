@@ -215,6 +215,35 @@ describe('ArticleFormComponent', () => {
     expect(elementValue('#articleTitleEn')).toBe('Second article');
   });
 
+  it('renders the cover file picker surface in the active application language', () => {
+    TestBed.inject(I18nService).switchLanguage('en').subscribe();
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-file-button"]',
+    ) as HTMLButtonElement | null;
+    const status = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-file-status"]',
+    ) as HTMLElement | null;
+    const input = fixture.nativeElement.querySelector('#articleCoverImageFile') as HTMLInputElement;
+
+    expect(button?.textContent?.trim()).toBe('Choose file');
+    expect(status?.textContent?.trim()).toBe('No file selected');
+    expect(input.hidden).toBe(true);
+  });
+
+  it('opens the native cover file picker from the localized button', () => {
+    const input = fixture.nativeElement.querySelector('#articleCoverImageFile') as HTMLInputElement;
+    const inputClick = jest.spyOn(input, 'click');
+    const button = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-file-button"]',
+    ) as HTMLButtonElement;
+
+    button.click();
+
+    expect(inputClick).toHaveBeenCalledTimes(1);
+  });
+
   it('passes content language and localized labels to both Markdown editors', () => {
     const editors = fixture.debugElement
       .queryAll(By.directive(MarkdownEditorStubComponent))
@@ -753,6 +782,9 @@ describe('ArticleFormComponent', () => {
       name: 'cover.png',
       fileName: 'cover.png',
     });
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-cover-file-status"]').textContent,
+    ).toContain('cover.png');
     expect(saveSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -797,9 +829,9 @@ describe('ArticleFormComponent', () => {
     const hint = fixture.nativeElement.querySelector(
       '#articleCoverImageReplaceHint',
     ) as HTMLElement | null;
-    const fileInput = fixture.nativeElement.querySelector(
-      '#articleCoverImageFile',
-    ) as HTMLInputElement;
+    const fileButton = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-file-button"]',
+    ) as HTMLButtonElement;
     const removeButton = fixture.nativeElement.querySelector(
       '[data-testid="article-cover-remove"]',
     ) as HTMLButtonElement | null;
@@ -808,13 +840,13 @@ describe('ArticleFormComponent', () => {
     expect(hint?.textContent).toContain(
       'Обложка установлена. Выберите новый файл, чтобы заменить её.',
     );
-    expect(fileInput.getAttribute('aria-describedby')).toContain('articleCoverImageReplaceHint');
+    expect(fileButton.getAttribute('aria-describedby')).toContain('articleCoverImageReplaceHint');
     expect(removeButton?.getAttribute('aria-label')).toBe('Удалить обложку');
     expect(removeButton?.getAttribute('title')).toBe('Удалить обложку');
     expect(removeButton?.textContent).toContain('−');
   });
 
-  it('removes the cover from form state without saving and focuses the replacement input', () => {
+  it('removes the cover from form state without saving and focuses the replacement button', () => {
     fixture.componentRef.setInput(
       'article',
       articleDetailWithCover({
@@ -828,6 +860,9 @@ describe('ArticleFormComponent', () => {
     const fileInput = fixture.nativeElement.querySelector(
       '#articleCoverImageFile',
     ) as HTMLInputElement;
+    const fileButton = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-file-button"]',
+    ) as HTMLButtonElement;
     Object.defineProperty(fileInput, 'value', {
       configurable: true,
       value: 'C:\\fakepath\\cover.png',
@@ -848,7 +883,10 @@ describe('ArticleFormComponent', () => {
     expect(fixture.componentInstance.form.controls.coverImageAltRu.value).toBe('');
     expect(fixture.componentInstance.form.controls.coverImageAltEn.value).toBe('');
     expect(fileInput.value).toBe('');
-    expect(document.activeElement).toBe(fileInput);
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-cover-file-status"]').textContent,
+    ).toContain('Файл не выбран');
+    expect(document.activeElement).toBe(fileButton);
     expect(fixture.componentInstance.form.dirty).toBe(true);
     expect(unsavedChangesScope.hasChanges()).toBe(true);
     expect(saveSpy).not.toHaveBeenCalled();
@@ -968,8 +1006,13 @@ describe('ArticleFormComponent', () => {
       fileName: 'cover.png',
     });
     expect(fixture.nativeElement.textContent).toContain('Загрузка обложки');
+    const fileButton = fixture.nativeElement.querySelector(
+      '[data-testid="article-cover-file-button"]',
+    ) as HTMLButtonElement;
     const saveButton = fixture.debugElement.query(By.css('button[type="submit"]'))
       .nativeElement as HTMLButtonElement;
+    expect(fileButton.disabled).toBe(true);
+    expect(fileButton.getAttribute('aria-busy')).toBe('true');
     expect(saveButton.disabled).toBe(true);
 
     upload$.next({
@@ -990,6 +1033,8 @@ describe('ArticleFormComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).not.toContain('Загрузка обложки');
+    expect(fileButton.disabled).toBe(false);
+    expect(fileButton.hasAttribute('aria-busy')).toBe(false);
     expect(saveButton.disabled).toBe(false);
   });
 
@@ -1000,6 +1045,9 @@ describe('ArticleFormComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Не удалось загрузить обложку');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="article-cover-file-status"]').textContent,
+    ).toContain('Файл не выбран');
     const saveButton = fixture.debugElement.query(By.css('button[type="submit"]'))
       .nativeElement as HTMLButtonElement;
     expect(saveButton.disabled).toBe(false);

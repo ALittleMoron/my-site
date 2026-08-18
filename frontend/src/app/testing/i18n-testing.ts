@@ -850,6 +850,8 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'articles.form.coverImageReplace': 'Заменить обложку',
   'articles.form.coverImageReplaceHint':
     'Обложка установлена. Выберите новый файл, чтобы заменить её.',
+  'articles.form.coverImageChooseFile': 'Выбрать файл',
+  'articles.form.coverImageNoFileSelected': 'Файл не выбран',
   'articles.form.coverImageRemove': 'Удалить обложку',
   'articles.form.coverImageUploading': 'Загрузка обложки...',
   'articles.form.coverImageUploadError': 'Не удалось загрузить обложку.',
@@ -931,6 +933,8 @@ const I18N_TEST_MESSAGES_EN: Record<string, string> = {
   'articles.preview.aria': 'Article preview',
   'articles.preview.article': 'Article',
   'articles.preview.social': 'Social preview',
+  'articles.form.coverImageChooseFile': 'Choose file',
+  'articles.form.coverImageNoFileSelected': 'No file selected',
   'matrix.grid.sheetsAria': 'Competency matrix sheets',
   'matrix.grid.section': 'Section',
   'matrix.grid.subsection': 'Subsection',

@@ -1077,6 +1077,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "articles.form.coverImageReplaceHint": (
             "Обложка установлена. Выберите новый файл, чтобы заменить её."
         ),
+        "articles.form.coverImageChooseFile": "Выбрать файл",
+        "articles.form.coverImageNoFileSelected": "Файл не выбран",
         "articles.form.coverImageRemove": "Удалить обложку",
         "articles.form.coverImageUploading": "Загрузка обложки...",
         "articles.form.coverImageUploadError": "Не удалось загрузить обложку.",
@@ -2238,6 +2240,8 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "articles.form.coverImageReplaceHint": (
             "A cover image is set. Choose a new file to replace it."
         ),
+        "articles.form.coverImageChooseFile": "Choose file",
+        "articles.form.coverImageNoFileSelected": "No file selected",
         "articles.form.coverImageRemove": "Remove cover image",
         "articles.form.coverImageUploading": "Uploading cover...",
         "articles.form.coverImageUploadError": "Could not upload the cover image.",

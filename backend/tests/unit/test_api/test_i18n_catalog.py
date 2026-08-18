@@ -53,6 +53,15 @@ class TestI18nCatalog:
         assert english_messages["shared.datePicker.formatHint"] == "Date format: MM/DD/YYYY"
         assert english_messages["shared.datePicker.requiredDate"] == "Enter a date."
 
+    def test_article_cover_file_picker_catalog_is_fully_localized(self) -> None:
+        russian_messages = get_i18n_messages(language=LanguageEnum.RU)
+        english_messages = get_i18n_messages(language=LanguageEnum.EN)
+
+        assert russian_messages["articles.form.coverImageChooseFile"] == "Выбрать файл"
+        assert russian_messages["articles.form.coverImageNoFileSelected"] == "Файл не выбран"
+        assert english_messages["articles.form.coverImageChooseFile"] == "Choose file"
+        assert english_messages["articles.form.coverImageNoFileSelected"] == "No file selected"
+
     def test_markdown_editor_catalog_is_fully_localized(self) -> None:
         russian_messages = get_i18n_messages(language=LanguageEnum.RU)
         english_messages = get_i18n_messages(language=LanguageEnum.EN)
