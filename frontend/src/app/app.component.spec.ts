@@ -43,7 +43,9 @@ describe('AppComponent', () => {
           useValue: {
             currentUser: signal(null),
             isLoggedIn: () => false,
+            isRestoringSession: signal(false),
             canManageContent: () => false,
+            ensureCurrentUserLoaded: jest.fn(),
             logout: jest.fn(),
             login: jest.fn(),
           },

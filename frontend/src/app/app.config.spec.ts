@@ -1,5 +1,5 @@
 import { HttpRequest } from '@angular/common/http';
-import { shouldRestoreAuthOnStartup, shouldTransferCacheRequest } from './app.config';
+import { authStartupMode, shouldTransferCacheRequest } from './app.config';
 
 describe('appConfig HTTP transfer cache filter', () => {
   it('allows safe public GET requests used by SSR pages', () => {
@@ -53,17 +53,23 @@ describe('appConfig HTTP transfer cache filter', () => {
 });
 
 describe('appConfig auth startup', () => {
-  it('skips auth restore probes on public routes', () => {
-    expect(shouldRestoreAuthOnStartup('/ru/how-this-site-is-built')).toBe(false);
-    expect(shouldRestoreAuthOnStartup('/en/articles/typed-articles')).toBe(false);
-    expect(shouldRestoreAuthOnStartup('/ru/competency-matrix')).toBe(false);
-    expect(
-      shouldRestoreAuthOnStartup('/ru/competency-matrix/questions/how-to-write-function'),
-    ).toBe(false);
+  it('skips auth restore probes for anonymous public visits', () => {
+    expect(authStartupMode('/ru/how-this-site-is-built', false)).toBe('skip');
+    expect(authStartupMode('/en/articles/typed-articles', false)).toBe('skip');
+    expect(authStartupMode('/ru/competency-matrix', false)).toBe('skip');
+    expect(authStartupMode('/ru/competency-matrix/questions/how-to-write-function', false)).toBe(
+      'skip',
+    );
   });
 
-  it('restores auth on protected admin routes', () => {
-    expect(shouldRestoreAuthOnStartup('/admin-panel')).toBe(true);
-    expect(shouldRestoreAuthOnStartup('/admin-panel/articles')).toBe(true);
+  it('restores a known session after the first public render', () => {
+    expect(authStartupMode('/ru/how-this-site-is-built', true)).toBe('after-render');
+    expect(authStartupMode('/en/articles/typed-articles', true)).toBe('after-render');
+  });
+
+  it('blocks protected admin startup until auth restoration completes', () => {
+    expect(authStartupMode('/admin-panel', false)).toBe('blocking');
+    expect(authStartupMode('/admin-panel/articles', false)).toBe('blocking');
+    expect(authStartupMode('/admin-panel/articles', true)).toBe('blocking');
   });
 });

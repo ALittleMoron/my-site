@@ -278,6 +278,10 @@ Important boundaries:
   session's original absolute lifetime, and logout; those cookie-authenticated endpoints are
   protected by CSRF guard checks. Expired server-side auth sessions are cleaned up by the scheduled
   TaskIQ worker path and are not a login activity signal.
+- The frontend keeps bearer access tokens only in memory. The only authentication-related value in
+  local storage is an untrusted session-presence hint used to decide whether a public browser
+  startup should attempt cookie-based refresh; the hint is removed on local auth failure or logout,
+  carries no credential, and never grants access without backend session verification.
 - Admin session management stays under `/api/admin/*` and is guarded by backend team-management
   authorization. Current-session detection comes from the authenticated bearer token's session id,
   while last-used timestamps are updated only on login and successful refresh.
@@ -309,8 +313,8 @@ Important boundaries:
    exercise.
 2. Monitoring and alerting are still incomplete. Security-relevant failures may be visible in logs
    before they are actively alerted.
-3. Browser-stored bearer tokens remain sensitive. XSS prevention, extension/device hygiene, token
-   lifetime, and revocation remain important.
+3. Bearer tokens held in browser memory remain sensitive. XSS prevention, extension/device hygiene,
+   token lifetime, and revocation remain important.
 4. Public Swagger UI/docs intentionally expose route shapes and use route-scoped relaxed CSP for the
    docs UI.
 5. A compromised maintainer device, GitHub account, deploy SSH key, or production host remains a

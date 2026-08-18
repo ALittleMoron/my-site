@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../../../../core/layout/theme.service';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -28,8 +36,10 @@ export class SiteHeaderComponent {
   private readonly authModal = inject(AuthModalService);
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly isNavOpen = signal(false);
+  readonly restoringSession = this.authService.isRestoringSession;
   readonly homeLink = computed(() => localizedPublicHomePath(this.currentLanguage()));
   readonly matrixLink = computed(() => `/${this.currentLanguage()}/competency-matrix`);
   readonly articlesLink = computed(() => `/${this.currentLanguage()}/articles`);
@@ -65,7 +75,18 @@ export class SiteHeaderComponent {
   }
 
   openLogin(): void {
-    this.authModal.openLogin();
+    if (this.restoringSession()) return;
+    this.authService
+      .ensureCurrentUserLoaded()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          if (!this.authService.isLoggedIn()) {
+            this.authModal.openLogin();
+          }
+        },
+        error: () => this.authModal.openLogin(),
+      });
   }
 
   logout(): void {

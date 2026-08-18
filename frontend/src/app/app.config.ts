@@ -1,6 +1,7 @@
 import {
   ApplicationConfig,
   ErrorHandler,
+  afterNextRender,
   inject,
   provideAppInitializer,
   provideZoneChangeDetection,
@@ -69,10 +70,18 @@ function initializeAuth() {
   if (!isPlatformBrowser(inject(PLATFORM_ID))) {
     return of(void 0);
   }
-  if (!shouldRestoreAuthOnStartup(inject(DOCUMENT).location.pathname)) {
-    return of(void 0);
+  const authService = inject(AuthService);
+  const startupMode = authStartupMode(
+    inject(DOCUMENT).location.pathname,
+    authService.hasKnownSession(),
+  );
+  if (startupMode === 'blocking') {
+    return authService.restoreSession();
   }
-  return inject(AuthService).restoreSession();
+  if (startupMode === 'after-render') {
+    afterNextRender({ read: () => authService.restoreSession().subscribe() });
+  }
+  return of(void 0);
 }
 
 function initializeI18n() {
@@ -96,9 +105,14 @@ export function shouldTransferCacheRequest(req: HttpRequest<unknown>): boolean {
   );
 }
 
-export function shouldRestoreAuthOnStartup(url: string): boolean {
+export type AuthStartupMode = 'skip' | 'after-render' | 'blocking';
+
+export function authStartupMode(url: string, hasKnownSession: boolean): AuthStartupMode {
   const pathname = readPathname(url);
-  return pathname === '/admin-panel' || pathname.startsWith('/admin-panel/');
+  if (pathname === '/admin-panel' || pathname.startsWith('/admin-panel/')) {
+    return 'blocking';
+  }
+  return hasKnownSession ? 'after-render' : 'skip';
 }
 
 function readPathname(url: string): string {

@@ -166,8 +166,13 @@
               type="button"
               class="btn button-inactive btn-sm text-nowrap flex-shrink-0"
               (click)="openLogin()"
+              [disabled]="restoringSession()"
+              [attr.aria-busy]="restoringSession()"
               [attr.aria-label]="'shell.auth.login' | t"
             >
+              @if (restoringSession()) {
+                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              }
               {{ 'shell.auth.login' | t }}
             </button>
           }

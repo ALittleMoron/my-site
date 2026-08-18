@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, signal } from '@angular/core';
 import { Router, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { SiteHeaderComponent, rewriteLanguagePrefixedUrl } from './site-header.component';
 import { ThemeService } from '../../../../core/layout/theme.service';
 import { ThemeName } from '../../../../core/layout/theme.service';
@@ -21,6 +21,7 @@ describe('SiteHeaderComponent', () => {
   let el: HTMLElement;
   let themeSignal: ReturnType<typeof signal<ThemeName>>;
   let currentUserSignal: ReturnType<typeof signal<AccountInfo | null>>;
+  let restoringSessionSignal: ReturnType<typeof signal<boolean>>;
   let languageSignal: ReturnType<typeof signal<LanguageCode | null>>;
   let languagesSignal: ReturnType<typeof signal<I18nLanguage[]>>;
   let router: Router;
@@ -33,6 +34,8 @@ describe('SiteHeaderComponent', () => {
     currentUser: ReturnType<typeof signal<AccountInfo | null>>;
     isLoggedIn: () => boolean;
     canManageContent: () => boolean;
+    isRestoringSession: ReturnType<typeof signal<boolean>>;
+    ensureCurrentUserLoaded: jest.Mock;
     logout: jest.Mock;
   };
   let mockAuthModalService: { openLogin: jest.Mock };
@@ -46,6 +49,7 @@ describe('SiteHeaderComponent', () => {
   beforeEach(async () => {
     themeSignal = signal<ThemeName>('light');
     currentUserSignal = signal<AccountInfo | null>(null);
+    restoringSessionSignal = signal(false);
     languageSignal = signal<LanguageCode | null>('ru');
     languagesSignal = signal<I18nLanguage[]>([
       { code: 'ru', label: 'Русский' },
@@ -65,6 +69,8 @@ describe('SiteHeaderComponent', () => {
         const role = currentUserSignal()?.role;
         return role === 'owner' || role === 'admin' || role === 'moderator';
       },
+      isRestoringSession: restoringSessionSignal,
+      ensureCurrentUserLoaded: jest.fn().mockReturnValue(of(void 0)),
       logout: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
     };
     mockAuthModalService = {
@@ -213,10 +219,61 @@ describe('SiteHeaderComponent', () => {
     expect(el.querySelector('a[routerLink="/login"]')).toBeNull();
   });
 
-  it('opens login modal when login button is clicked', () => {
+  it('restores an existing session before asking for credentials', () => {
+    mockAuthService.ensureCurrentUserLoaded.mockImplementation(() => {
+      currentUserSignal.set({ username: 'admin', role: 'admin' });
+      return of(void 0);
+    });
+
+    const loginButton = el.querySelector('button[aria-label="Войти"]') as HTMLButtonElement;
+    loginButton.click();
+    fixture.detectChanges();
+
+    expect(mockAuthModalService.openLogin).not.toHaveBeenCalled();
+    expect(el.querySelector('[aria-label="Вы вошли как admin"]')).not.toBeNull();
+  });
+
+  it('opens login modal when session restoration leaves the user anonymous', () => {
     const loginButton = el.querySelector('button[aria-label="Войти"]') as HTMLButtonElement;
     loginButton.click();
     expect(mockAuthModalService.openLogin).toHaveBeenCalled();
+  });
+
+  it('disables login while one session restoration is in flight', () => {
+    const restoration = new Subject<void>();
+    mockAuthService.ensureCurrentUserLoaded.mockImplementation(() => {
+      restoringSessionSignal.set(true);
+      return restoration;
+    });
+    const loginButton = el.querySelector('button[aria-label="Войти"]') as HTMLButtonElement;
+
+    loginButton.click();
+    fixture.detectChanges();
+
+    expect(loginButton.disabled).toBe(true);
+    expect(loginButton.getAttribute('aria-busy')).toBe('true');
+    loginButton.click();
+    expect(mockAuthService.ensureCurrentUserLoaded).toHaveBeenCalledTimes(1);
+
+    restoration.next();
+    restoringSessionSignal.set(false);
+    restoration.complete();
+    fixture.detectChanges();
+
+    expect(mockAuthModalService.openLogin).toHaveBeenCalledTimes(1);
+    expect(loginButton.disabled).toBe(false);
+    expect(loginButton.getAttribute('aria-busy')).toBe('false');
+  });
+
+  it('disables login during automatic startup restoration', () => {
+    restoringSessionSignal.set(true);
+    fixture.detectChanges();
+    const loginButton = el.querySelector('button[aria-label="Войти"]') as HTMLButtonElement;
+
+    expect(loginButton.disabled).toBe(true);
+    expect(loginButton.getAttribute('aria-busy')).toBe('true');
+    loginButton.click();
+    expect(mockAuthService.ensureCurrentUserLoaded).not.toHaveBeenCalled();
   });
 
   it('shows username and logout button when logged in', () => {

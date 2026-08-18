@@ -1,9 +1,10 @@
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { HttpContext } from '@angular/common/http';
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
 import {
   Observable,
   catchError,
+  defer,
   finalize,
   map,
   of,
@@ -16,6 +17,8 @@ import { ApiClient } from '../http/api-client.service';
 import { AuthTokenService } from './auth-token.service';
 import { AuthSessionService } from './auth-session.service';
 import { SKIP_AUTH_HEADER, SKIP_AUTH_REFRESH } from './auth-http-context';
+
+const SESSION_PRESENCE_STORAGE_KEY = 'authSessionPresent';
 
 export interface LoginRequest {
   username: string;
@@ -40,8 +43,11 @@ export class AuthService {
   private readonly tokenService = inject(AuthTokenService);
   private readonly session = inject(AuthSessionService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly document = inject(DOCUMENT);
   private currentUserLoad$: Observable<void> | null = null;
   private accessTokenRefresh$: Observable<void> | null = null;
+  private sessionRestore$: Observable<void> | null = null;
+  private readonly restoringSession = signal(false);
 
   readonly currentUser = this.session.currentUser;
   readonly isOwner = this.session.isOwner;
@@ -49,6 +55,7 @@ export class AuthService {
   readonly canManageContent = this.session.canManageContent;
   readonly canManageTeam = this.session.canManageTeam;
   readonly isLoggedIn = this.session.isLoggedIn;
+  readonly isRestoringSession = this.restoringSession.asReadonly();
 
   login(username: string, password: string): Observable<void> {
     return this.apiClient
@@ -57,7 +64,7 @@ export class AuthService {
         withCredentials: true,
       })
       .pipe(
-        tap((response) => this.tokenService.setToken(response.accessToken)),
+        tap((response) => this.storeAccessToken(response.accessToken)),
         switchMap(() => this.loadCurrentUser()),
       );
   }
@@ -96,7 +103,7 @@ export class AuthService {
         },
       )
       .pipe(
-        tap((response) => this.tokenService.setToken(response.accessToken)),
+        tap((response) => this.storeAccessToken(response.accessToken)),
         map(() => void 0),
         finalize(() => {
           this.accessTokenRefresh$ = null;
@@ -110,23 +117,56 @@ export class AuthService {
     if (!isPlatformBrowser(this.platformId)) {
       return of(void 0);
     }
-    return this.refreshAccessToken().pipe(
-      switchMap(() => this.loadCurrentUser()),
-      catchError(() => {
-        this.clearLocalSession();
-        return of(void 0);
+    if (this.sessionRestore$ !== null) {
+      return this.sessionRestore$;
+    }
+    this.sessionRestore$ = defer(() => {
+      this.restoringSession.set(true);
+      return this.refreshAccessToken().pipe(
+        switchMap(() => this.loadCurrentUser()),
+        catchError(() => {
+          this.clearLocalSession();
+          return of(void 0);
+        }),
+      );
+    }).pipe(
+      finalize(() => {
+        this.sessionRestore$ = null;
+        this.restoringSession.set(false);
       }),
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
+    return this.sessionRestore$;
   }
 
   clearLocalSession(): void {
     this.tokenService.clearToken();
     this.session.clear();
+    const storage = this.storage();
+    if (storage === null) return;
+    try {
+      storage.removeItem(SESSION_PRESENCE_STORAGE_KEY);
+    } catch {
+      return;
+    }
+  }
+
+  hasKnownSession(): boolean {
+    const storage = this.storage();
+    if (storage === null) return false;
+    try {
+      return storage.getItem(SESSION_PRESENCE_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
   }
 
   ensureCurrentUserLoaded(): Observable<void> {
     if (this.currentUser() !== null) {
       return of(void 0);
+    }
+    if (this.sessionRestore$ !== null) {
+      return this.sessionRestore$;
     }
     if (!this.tokenService.token()) {
       return this.restoreSession();
@@ -134,13 +174,18 @@ export class AuthService {
     if (this.currentUserLoad$ !== null) {
       return this.currentUserLoad$;
     }
-    this.currentUserLoad$ = this.loadCurrentUser().pipe(
-      catchError((error: unknown) => {
-        this.clearLocalSession();
-        return throwError(() => error);
-      }),
+    this.currentUserLoad$ = defer(() => {
+      this.restoringSession.set(true);
+      return this.loadCurrentUser().pipe(
+        catchError((error: unknown) => {
+          this.clearLocalSession();
+          return throwError(() => error);
+        }),
+      );
+    }).pipe(
       finalize(() => {
         this.currentUserLoad$ = null;
+        this.restoringSession.set(false);
       }),
       shareReplay({ bufferSize: 1, refCount: true }),
     );
@@ -153,5 +198,24 @@ export class AuthService {
         this.session.setCurrentUser(account);
       }),
     );
+  }
+
+  private storage(): Storage | null {
+    try {
+      return this.document.defaultView?.localStorage ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private storeAccessToken(accessToken: string): void {
+    this.tokenService.setToken(accessToken);
+    const storage = this.storage();
+    if (storage === null) return;
+    try {
+      storage.setItem(SESSION_PRESENCE_STORAGE_KEY, 'true');
+    } catch {
+      return;
+    }
   }
 }

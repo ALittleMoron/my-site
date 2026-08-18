@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
@@ -46,6 +47,7 @@ describe('AuthService', () => {
 
       expect(tokenService.token()).toBe('new-token');
       expect(localStorage.getItem('accessToken')).toBeNull();
+      expect(localStorage.getItem('authSessionPresent')).toBe('true');
       expect(service.currentUser()).toEqual(mockAccount);
       expect(service.isLoggedIn()).toBe(true);
       expect(service.canManageContent()).toBe(true);
@@ -66,6 +68,7 @@ describe('AuthService', () => {
       refreshReq.flush({ accessToken: 'fresh-token', accessTokenExpiresInSeconds: 900 });
 
       expect(tokenService.token()).toBe('fresh-token');
+      expect(localStorage.getItem('authSessionPresent')).toBe('true');
     });
 
     it('shares a concurrent refresh request', () => {
@@ -107,6 +110,57 @@ describe('AuthService', () => {
       expect(service.currentUser()).toEqual(mockAccount);
       expect(service.canManageContent()).toBe(true);
       expect(service.canManageTeam()).toBe(true);
+    });
+
+    it('shares the complete concurrent session restore', () => {
+      const mockAccount: AccountInfo = { username: 'owner', role: 'owner' };
+      let completions = 0;
+
+      service.restoreSession().subscribe(() => {
+        completions += 1;
+      });
+      service.restoreSession().subscribe(() => {
+        completions += 1;
+      });
+
+      const refreshRequests = httpMock.match((req) => req.url.includes('/api/auth/refresh'));
+      expect(refreshRequests).toHaveLength(1);
+      refreshRequests[0].flush({
+        accessToken: 'shared-session-token',
+        accessTokenExpiresInSeconds: 900,
+      });
+
+      const accountRequests = httpMock.match((req) => req.url.includes('/api/account/base'));
+      expect(accountRequests).toHaveLength(1);
+      accountRequests[0].flush(mockAccount);
+
+      expect(completions).toBe(2);
+      expect(service.currentUser()).toEqual(mockAccount);
+    });
+
+    it('reuses the active restore after refresh has returned but account loading is pending', () => {
+      const mockAccount: AccountInfo = { username: 'owner', role: 'owner' };
+      let completions = 0;
+
+      service.restoreSession().subscribe(() => {
+        completions += 1;
+      });
+      expect(service.isRestoringSession()).toBe(true);
+
+      httpMock
+        .expectOne((req) => req.url.includes('/api/auth/refresh'))
+        .flush({ accessToken: 'restored-token', accessTokenExpiresInSeconds: 900 });
+
+      service.ensureCurrentUserLoaded().subscribe(() => {
+        completions += 1;
+      });
+
+      const accountRequests = httpMock.match((req) => req.url.includes('/api/account/base'));
+      expect(accountRequests).toHaveLength(1);
+      accountRequests[0].flush(mockAccount);
+
+      expect(completions).toBe(2);
+      expect(service.isRestoringSession()).toBe(false);
     });
 
     it('clears local state and completes when startup refresh is rejected', () => {
@@ -169,6 +223,28 @@ describe('AuthService', () => {
         { message: 'Logout failed' },
         { status: 500, statusText: 'Internal Server Error' },
       );
+    });
+  });
+
+  describe('clearLocalSession', () => {
+    it('removes the persisted session presence marker', () => {
+      localStorage.setItem('authSessionPresent', 'true');
+
+      service.clearLocalSession();
+
+      expect(localStorage.getItem('authSessionPresent')).toBeNull();
+    });
+  });
+
+  describe('hasKnownSession', () => {
+    it('reports no known session when the marker is absent', () => {
+      expect(service.hasKnownSession()).toBe(false);
+    });
+
+    it('reports a persisted session presence marker', () => {
+      localStorage.setItem('authSessionPresent', 'true');
+
+      expect(service.hasKnownSession()).toBe(true);
     });
   });
 
@@ -264,5 +340,97 @@ describe('AuthService', () => {
       expect(tokenService.token()).toBeNull();
       expect(service.currentUser()).toBeNull();
     });
+  });
+});
+
+describe('AuthService without a browser document', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('does not touch browser storage when checking or clearing session presence', () => {
+    const getItem = jest.spyOn(Storage.prototype, 'getItem');
+    const removeItem = jest.spyOn(Storage.prototype, 'removeItem');
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        ApiClient,
+        AuthService,
+        { provide: DOCUMENT, useValue: { defaultView: null } },
+      ],
+    });
+    const service = TestBed.inject(AuthService);
+
+    expect(service.hasKnownSession()).toBe(false);
+    service.clearLocalSession();
+
+    expect(getItem).not.toHaveBeenCalled();
+    expect(removeItem).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService with unavailable browser storage', () => {
+  it('fails closed when the localStorage getter throws', () => {
+    const defaultView = {} as Window;
+    Object.defineProperty(defaultView, 'localStorage', {
+      get: () => {
+        throw new DOMException('Blocked', 'SecurityError');
+      },
+    });
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        ApiClient,
+        AuthService,
+        { provide: DOCUMENT, useValue: { defaultView } },
+      ],
+    });
+    const service = TestBed.inject(AuthService);
+
+    expect(service.hasKnownSession()).toBe(false);
+    expect(() => service.clearLocalSession()).not.toThrow();
+  });
+
+  it('keeps authentication functional when localStorage operations throw', () => {
+    const unavailableStorage = {
+      getItem: jest.fn(() => {
+        throw new DOMException('Blocked', 'SecurityError');
+      }),
+      setItem: jest.fn(() => {
+        throw new DOMException('Blocked', 'SecurityError');
+      }),
+      removeItem: jest.fn(() => {
+        throw new DOMException('Blocked', 'SecurityError');
+      }),
+    } as unknown as Storage;
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        ApiClient,
+        AuthService,
+        { provide: DOCUMENT, useValue: { defaultView: { localStorage: unavailableStorage } } },
+      ],
+    });
+    const service = TestBed.inject(AuthService);
+    const httpMock = TestBed.inject(HttpTestingController);
+    let completed = false;
+
+    expect(service.hasKnownSession()).toBe(false);
+    expect(() => service.clearLocalSession()).not.toThrow();
+
+    service.login('admin', 'secret').subscribe(() => {
+      completed = true;
+    });
+    httpMock
+      .expectOne((req) => req.url.includes('/api/auth/login'))
+      .flush({ accessToken: 'token', accessTokenExpiresInSeconds: 900 });
+    httpMock
+      .expectOne((req) => req.url.includes('/api/account/base'))
+      .flush({ username: 'admin', role: 'admin' } satisfies AccountInfo);
+
+    expect(completed).toBe(true);
+    expect(service.isLoggedIn()).toBe(true);
+    httpMock.verify();
   });
 });
