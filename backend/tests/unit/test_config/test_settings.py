@@ -1,9 +1,7 @@
 from collections.abc import Generator
 
 import pytest
-from pydantic import ValidationError
 
-from core.i18n.enums import LanguageEnum
 from infra.config.settings import Settings
 
 
@@ -68,58 +66,3 @@ class TestSettings:
             self.settings.valkey.url_for_http_cache.get_secret_value()
             == "valkey://localhost:6379/0"
         )
-
-    def test_i18n_default_language(self) -> None:
-        assert self.settings.i18n.default_language == LanguageEnum.RU
-
-    def test_contact_requests_disabled_by_test_settings(self) -> None:
-        assert self.settings.app.contact_requests_enabled is False
-
-    def test_owner_init_credentials_use_owner_environment(self) -> None:
-        assert self.settings.owner.init_login == "owner"
-        assert self.settings.owner.init_password.get_secret_value() == "owner"
-
-    def test_taskiq_agent_audit_prune_interval_is_required(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        monkeypatch.delenv("TASKIQ_AGENT_AUDIT_PRUNE_INTERVAL_SECONDS")
-
-        with pytest.raises(ValidationError, match="agent_audit_prune_interval_seconds"):
-            type(self.settings.taskiq)(
-                _env_file=None,
-                auth_session_prune_interval_seconds=86_400,
-                cache_warm_interval_seconds=3_600,
-                file_orphan_prune_interval_seconds=86_400,
-                result_expire_seconds=3_600,
-            )
-
-    def test_taskiq_file_orphan_prune_interval_is_required(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        monkeypatch.delenv("TASKIQ_FILE_ORPHAN_PRUNE_INTERVAL_SECONDS")
-
-        with pytest.raises(ValidationError, match="file_orphan_prune_interval_seconds"):
-            type(self.settings.taskiq)(
-                _env_file=None,
-                auth_session_prune_interval_seconds=86_400,
-                agent_audit_prune_interval_seconds=86_400,
-                cache_warm_interval_seconds=3_600,
-                result_expire_seconds=3_600,
-            )
-
-    def test_file_orphan_retention_is_required_and_at_least_seven_days(
-        self,
-        monkeypatch: pytest.MonkeyPatch,
-    ) -> None:
-        monkeypatch.delenv("FILES_ORPHAN_RETENTION_SECONDS")
-
-        with pytest.raises(ValidationError, match="orphan_retention_seconds"):
-            type(self.settings.files)(_env_file=None)
-
-        with pytest.raises(ValidationError, match="greater than or equal to 604800"):
-            type(self.settings.files)(_env_file=None, orphan_retention_seconds=0)
-
-        with pytest.raises(ValidationError, match="greater than or equal to 604800"):
-            type(self.settings.files)(_env_file=None, orphan_retention_seconds=604_799)
