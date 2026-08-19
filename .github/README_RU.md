@@ -1,5 +1,9 @@
 # Мой сайт
 
+<p align="center">
+  <img src="../frontend/public/logo-512x512.png" alt="Логотип проекта" width="180">
+</p>
+
 [🇺🇸 English version](./README.md)
 
 | Категория | Технологии |

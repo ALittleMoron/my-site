@@ -1,5 +1,9 @@
 # My Site
 
+<p align="center">
+  <img src="../frontend/public/logo-512x512.png" alt="Project logo" width="180">
+</p>
+
 [🇷🇺 Russian version](./README_RU.md)
 
 | Category | Technologies |

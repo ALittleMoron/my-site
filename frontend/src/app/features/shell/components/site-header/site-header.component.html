@@ -3,11 +3,18 @@
 >
   <div class="container-fluid px-0 gap-2">
     <a
-      class="navbar-brand fs-4 text-success fw-bold"
+      class="navbar-brand d-inline-flex align-items-center p-0"
       [routerLink]="homeLink()"
       (click)="closeNav()"
     >
-      ALM
+      <img
+        src="/logo-192x192.webp"
+        srcset="/logo-192x192.webp 1x, /logo-512x512.webp 2x"
+        width="40"
+        height="40"
+        decoding="async"
+        [attr.alt]="'siteBuild.hero.logoAlt' | t"
+      />
     </a>
     <button
       class="navbar-toggler flex-shrink-0"

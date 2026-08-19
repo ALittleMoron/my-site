@@ -86,6 +86,7 @@ describe('SiteHeaderComponent', () => {
           'shell.nav.articles': 'Статьи',
           'shell.nav.adminPanel': 'Админ-панель',
           'shell.nav.toggleNavigation': 'Открыть навигацию',
+          'siteBuild.hero.logoAlt': 'Логотип сайта',
           'shell.theme.dark': 'Dark',
           'shell.theme.light': 'Light',
           'shell.theme.toggle': 'Переключить тему',
@@ -129,6 +130,17 @@ describe('SiteHeaderComponent', () => {
     expect(fixture.componentInstance.homeLink()).toBe('/ru/how-this-site-is-built');
     expect(el.querySelector('a[href="/ru/about-me"]')).toBeNull();
     expect(el.textContent).not.toContain('Обо мне');
+  });
+
+  it('renders the primary project logo in the home link', () => {
+    const logo = el.querySelector('a.navbar-brand img') as HTMLImageElement | null;
+
+    expect(logo).not.toBeNull();
+    expect(logo?.getAttribute('src')).toBe('/logo-192x192.webp');
+    expect(logo?.getAttribute('srcset')).toBe('/logo-192x192.webp 1x, /logo-512x512.webp 2x');
+    expect(logo?.getAttribute('width')).toBe('40');
+    expect(logo?.getAttribute('height')).toBe('40');
+    expect(logo?.getAttribute('alt')).toBe('Логотип сайта');
   });
 
   it('renders nav link to the localized competency matrix page', () => {

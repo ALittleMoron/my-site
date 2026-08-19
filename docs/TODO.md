@@ -781,6 +781,9 @@ Graph views, plugin APIs, and plugin-system support are explicitly out of scope 
   without reintroducing hidden source-row height, shifting controls, or changing document flow.
 - [x] Make Markdown presentation tests commit their forced public CodeMirror parse through a pure
   editor-state update so parser timing cannot make the suite intermittent.
+- [ ] Make the Markdown table editor JSDOM interaction and invariant suites deterministic without
+  relying on background parsing or viewport timing, and eliminate the leaked Jest worker reported
+  by full frontend test runs.
 - [x] Keep the caret in the same Markdown table cell after deleting or replacing all of its
   content, with a complete regression matrix for cell positions, source forms, input paths,
   selection state, scrolling, and undo/redo.
