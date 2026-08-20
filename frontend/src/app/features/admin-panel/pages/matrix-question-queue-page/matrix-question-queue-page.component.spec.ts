@@ -274,6 +274,26 @@ describe('MatrixQuestionQueuePageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Кто предложил: alice');
   });
 
+  it('groups the created time, suggester, and structure as compact metadata', () => {
+    const metadata = fixture.nativeElement.querySelector<HTMLElement>(
+      `[data-testid="matrix-queue-metadata-${QUESTION_ID}"]`,
+    );
+
+    expect(metadata?.textContent).toContain('Создан:');
+    expect(metadata?.textContent).toContain('Кто предложил: Анонимный');
+    expect(metadata?.textContent).toContain('Структура: Junior / python / Core / Style');
+  });
+
+  it('exposes queue rejection as a contextual minus action', () => {
+    const reject = fixture.nativeElement.querySelector<HTMLButtonElement>(
+      `[data-testid="matrix-queue-reject-${QUESTION_ID}"]`,
+    );
+
+    expect(reject?.textContent?.trim()).toBe('−');
+    expect(reject?.getAttribute('aria-label')).toBe('Отклонить вопрос «What is PEP 8?»');
+    expect(reject?.getAttribute('title')).toBe('Отклонить вопрос «What is PEP 8?»');
+  });
+
   it('filters the queue with AND semantics without reloading or changing FIFO order', () => {
     loadQueueWithQuestions([
       queuedQuestion,

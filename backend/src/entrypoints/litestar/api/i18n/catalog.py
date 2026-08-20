@@ -562,6 +562,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
         "adminMatrixQueue.importIssue.duplicateInFile": ("Повтор строки {rows} в выбранном файле."),
         "adminMatrixQueue.importIssue.duplicateInQueue": "Такой вопрос уже есть в очереди.",
         "adminMatrixQueue.reject": "Отклонить",
+        "adminMatrixQueue.rejectQuestion": "Отклонить вопрос «{question}»",
         "adminMatrixQueue.createAndNext": "Создать и к следующему",
         "adminMatrixQueue.createAndEdit": "Создать и перейти",
         "adminMatrixQueue.rejectAndNext": "Отклонить и далее",
@@ -1731,6 +1732,7 @@ MESSAGES: Mapping[LanguageEnum, LanguageMessages] = {
             "The same question is already in the queue."
         ),
         "adminMatrixQueue.reject": "Reject",
+        "adminMatrixQueue.rejectQuestion": "Reject question “{question}”",
         "adminMatrixQueue.createAndNext": "Create and next question",
         "adminMatrixQueue.createAndEdit": "Create and edit",
         "adminMatrixQueue.rejectAndNext": "Reject and next",

@@ -148,10 +148,10 @@
   } @else {
     <div class="list-group">
       @for (question of filteredQuestions(); track question.id) {
-        <div class="list-group-item p-0 mb-3">
+        <div class="matrix-queue-card list-group-item position-relative p-0 mb-3">
           <button
             type="button"
-            class="list-group-item list-group-item-action border-0 rounded-0 w-100 text-start"
+            class="list-group-item list-group-item-action border-0 rounded-0 w-100 text-start pe-5"
             [class.list-group-item-success]="selectedQuestion()?.id === question.id"
             [attr.aria-current]="selectedQuestion()?.id === question.id ? 'true' : null"
             [attr.data-testid]="'matrix-queue-question-' + question.id"
@@ -159,21 +159,26 @@
             (click)="selectQuestion(question)"
           >
             <span class="d-block fw-semibold">{{ question.question }}</span>
-            <span class="d-block small">
-              {{ 'adminMatrixQueue.createdAt' | t }}:
-              <time [attr.datetime]="question.createdAt" data-testid="matrix-queue-created-at">{{
-                formatCreatedAt(question.createdAt)
-              }}</time>
-            </span>
-            <span class="d-block small">
-              {{ 'adminMatrixQueue.suggestedBy' | t }}:
-              {{ suggestedByLabel(question) }}
-            </span>
-            @if (questionStructure(question)) {
-              <span class="d-block small">
-                {{ 'adminMatrixQueue.structure' | t }}: {{ questionStructure(question) }}
+            <span
+              class="matrix-queue-metadata d-flex flex-wrap align-items-center small text-body-secondary mt-1"
+              [attr.data-testid]="'matrix-queue-metadata-' + question.id"
+            >
+              <span class="matrix-queue-metadata-item">
+                {{ 'adminMatrixQueue.createdAt' | t }}:
+                <time [attr.datetime]="question.createdAt" data-testid="matrix-queue-created-at">{{
+                  formatCreatedAt(question.createdAt)
+                }}</time>
               </span>
-            }
+              <span class="matrix-queue-metadata-item">
+                {{ 'adminMatrixQueue.suggestedBy' | t }}:
+                {{ suggestedByLabel(question) }}
+              </span>
+              @if (questionStructure(question)) {
+                <span class="matrix-queue-metadata-item matrix-queue-metadata-structure">
+                  {{ 'adminMatrixQueue.structure' | t }}: {{ questionStructure(question) }}
+                </span>
+              }
+            </span>
             @if (question.claim; as claim) {
               <span class="d-block small text-warning-emphasis mt-2" role="status">
                 {{ 'adminMatrixQueue.claimedBy' | t: { agent: claim.agentClientName } }}
@@ -183,8 +188,15 @@
               </span>
             }
           </button>
-          <div class="d-flex justify-content-end gap-2 px-3 pb-3">
-            @if (question.claim !== null) {
+          <app-admin-remove-button
+            class="matrix-queue-reject"
+            [testId]="'matrix-queue-reject-' + question.id"
+            [ariaLabel]="'adminMatrixQueue.rejectQuestion' | t: { question: question.question }"
+            [disabled]="question.claim !== null || rejectingQuestionId() !== null"
+            (remove)="rejectQuestion(question)"
+          />
+          @if (question.claim !== null) {
+            <div class="d-flex justify-content-end px-3 pb-3">
               <button
                 type="button"
                 class="btn btn-outline-warning btn-sm"
@@ -194,17 +206,8 @@
               >
                 {{ 'adminMatrixQueue.releaseClaim' | t }}
               </button>
-            }
-            <button
-              type="button"
-              class="btn btn-outline-danger btn-sm"
-              [attr.data-testid]="'matrix-queue-reject-' + question.id"
-              [disabled]="question.claim !== null || rejectingQuestionId() !== null"
-              (click)="rejectQuestion(question)"
-            >
-              {{ 'adminMatrixQueue.reject' | t }}
-            </button>
-          </div>
+            </div>
+          }
         </div>
       }
     </div>

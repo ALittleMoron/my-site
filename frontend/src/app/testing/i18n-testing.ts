@@ -497,6 +497,7 @@ const I18N_TEST_MESSAGES: Record<string, string> = {
   'adminMatrixQueue.importIssue.duplicateInFile': 'Повтор строки {rows} в выбранном файле.',
   'adminMatrixQueue.importIssue.duplicateInQueue': 'Такой вопрос уже есть в очереди.',
   'adminMatrixQueue.reject': 'Отклонить',
+  'adminMatrixQueue.rejectQuestion': 'Отклонить вопрос «{question}»',
   'adminMatrixQueue.createAndNext': 'Создать и к следующему',
   'adminMatrixQueue.createAndEdit': 'Создать и перейти',
   'adminMatrixQueue.rejectAndNext': 'Отклонить и далее',

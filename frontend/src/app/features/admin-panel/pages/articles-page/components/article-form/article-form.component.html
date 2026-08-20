@@ -129,17 +129,13 @@
           class="article-cover-current-preview"
           [class.article-cover-current-preview--unavailable]="coverImagePreviewUrl() === null"
         >
-          <button
-            type="button"
-            class="article-cover-remove article-remove-button btn btn-sm rounded-circle"
-            data-testid="article-cover-remove"
+          <app-admin-remove-button
+            class="article-cover-remove"
+            testId="article-cover-remove"
             [disabled]="coverImageUploading()"
-            [attr.aria-label]="'articles.form.coverImageRemove' | t"
-            [attr.title]="'articles.form.coverImageRemove' | t"
-            (click)="removeCoverImage()"
-          >
-            <span aria-hidden="true">−</span>
-          </button>
+            [ariaLabel]="'articles.form.coverImageRemove' | t"
+            (remove)="removeCoverImage()"
+          />
           @if (coverImagePreviewUrl(); as coverImageUrl) {
             <img
               data-testid="article-cover-current-preview"
@@ -436,16 +432,12 @@
             role="listitem"
           >
             <span>{{ tag.name }}</span>
-            <button
-              type="button"
-              class="article-remove-button btn btn-sm rounded-circle"
-              [attr.data-testid]="'article-tag-remove-' + tag.id"
-              [attr.aria-label]="'articles.tags.removeFromArticle' | t: { name: tag.name }"
-              [attr.title]="'articles.tags.removeFromArticle' | t: { name: tag.name }"
-              (click)="removeTag(tag.id)"
-            >
-              <span aria-hidden="true">−</span>
-            </button>
+            <app-admin-remove-button
+              [testId]="'article-tag-remove-' + tag.id"
+              [ariaLabel]="'articles.tags.removeFromArticle' | t: { name: tag.name }"
+              [disabled]="false"
+              (remove)="removeTag(tag.id)"
+            />
           </span>
         }
       </div>

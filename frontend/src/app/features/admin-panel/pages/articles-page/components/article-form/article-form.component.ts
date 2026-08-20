@@ -48,6 +48,7 @@ import { ArticleAuthoringPreviewComponent } from '../article-authoring-preview/a
 import { ArticleFolderPickerComponent } from '../article-folder-picker/article-folder-picker.component';
 import { ArticleSeoPanelComponent } from '../article-seo-panel/article-seo-panel.component';
 import { AdminControlValidationStateDirective } from '../../../../directives/admin-control-validation-state.directive';
+import { AdminRemoveButtonComponent } from '../../../../components/admin-remove-button/admin-remove-button.component';
 import {
   ADMIN_VALIDATION_LIMITS,
   controlInvalid,
@@ -118,6 +119,7 @@ type ArticleFormViewMode = 'edit' | 'preview';
     ArticleFolderPickerComponent,
     ArticleSeoPanelComponent,
     AdminControlValidationStateDirective,
+    AdminRemoveButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './article-form.component.html',

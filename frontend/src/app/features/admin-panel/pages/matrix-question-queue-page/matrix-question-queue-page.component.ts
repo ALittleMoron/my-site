@@ -26,6 +26,7 @@ import {
 import { LoadingSpinnerComponent } from '../../../../shared/ui/loading-spinner/loading-spinner.component';
 import { formatLocalizedDate } from '../../../../shared/utils/localized-date';
 import { MatrixQuestionFormComponent } from '../../components/matrix-question-form/matrix-question-form.component';
+import { AdminRemoveButtonComponent } from '../../components/admin-remove-button/admin-remove-button.component';
 import {
   QueuedMatrixImportIssue,
   QueuedMatrixImportIssueCode,
@@ -96,6 +97,7 @@ const IMPORT_ISSUE_KEY: Record<QueuedMatrixImportIssueCode, string> = {
     MatrixQuestionFormComponent,
     ModalScrollDirective,
     SiteSelectComponent,
+    AdminRemoveButtonComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-question-queue-page.component.html',
