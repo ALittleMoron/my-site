@@ -5,6 +5,10 @@ import {
   ReadonlyMatrixSectionGroup,
 } from '../matrix-readonly.model';
 
+const GRADE_RANK: ReadonlyMap<string, number> = new Map(
+  ['Junior', 'Junior+', 'Middle', 'Middle+', 'Senior'].map((grade, index) => [grade, index]),
+);
+
 interface GridCell {
   grade: string | null;
   questions: ReadonlyMatrixQuestion[];
@@ -47,7 +51,11 @@ export class MatrixGroupedGridComponent {
         }
       }
     }
-    return result;
+    return result.sort(
+      (left, right) =>
+        (left === null ? GRADE_RANK.size : (GRADE_RANK.get(left) ?? GRADE_RANK.size)) -
+        (right === null ? GRADE_RANK.size : (GRADE_RANK.get(right) ?? GRADE_RANK.size)),
+    );
   });
 
   readonly rows = computed<GridRow[]>(() => {

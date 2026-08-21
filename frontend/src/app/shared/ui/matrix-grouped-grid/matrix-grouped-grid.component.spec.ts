@@ -57,6 +57,51 @@ describe('MatrixGroupedGridComponent', () => {
     expect(el.querySelector('.badge')).toBeNull();
   });
 
+  it('renders grade columns in ascending competency order', () => {
+    fixture.componentRef.setInput('questions', {
+      sheetKey: 'python',
+      sheet: 'Python',
+      sections: [
+        {
+          section: 'Core',
+          subsections: [
+            {
+              subsection: 'Sequences',
+              grades: [
+                { grade: 'Junior+', questions: [] },
+                { grade: 'Middle+', questions: [] },
+              ],
+            },
+            {
+              subsection: 'Functions',
+              grades: [
+                { grade: 'Junior', questions: [] },
+                { grade: 'Middle', questions: [] },
+                { grade: 'Senior', questions: [] },
+              ],
+            },
+          ],
+        },
+      ],
+    } satisfies ReadonlyMatrixQuestionList);
+    fixture.detectChanges();
+
+    const headings = Array.from(
+      el.querySelectorAll<HTMLTableCellElement>('[data-testid="matrix-desktop-table"] thead th'),
+      (heading) => heading.textContent?.trim(),
+    );
+
+    expect(headings).toEqual([
+      'Section',
+      'Subsection',
+      'Junior',
+      'Junior+',
+      'Middle',
+      'Middle+',
+      'Senior',
+    ]);
+  });
+
   it('renders mobile cards with section, subsection, grade, and question context', () => {
     const card = el.querySelector('[data-testid="matrix-mobile-card"]') as HTMLElement | null;
 
