@@ -84,13 +84,6 @@
 - [x] Dependency scanning (pip-audit, Bandit, Trivy)
 - [x] VPN for accessing internal systems
 - [x] Add Dependabot to the repository
-- [ ] Prepare repository split
-  - [x] Move Angular serving into a frontend-owned Docker image
-  - [x] Keep infrastructure nginx as the edge reverse proxy
-  - [ ] Move root AGENTS.md rules to backend and frontend
-  - [ ] Move backend, frontend, and infrastructure into separate repositories
-  - [ ] Configure independent image publishing for backend and frontend
-  - [ ] Update deployment workflow to consume published images from the infrastructure repository
 - [x] Bot protection for the site
   - [x] Basic nginx edge rate limits for login, contact, public articles, and admin search endpoints
 - [ ] Pin Docker image tags currently using latest in compose/build workflows.
@@ -807,6 +800,7 @@ Graph views, plugin APIs, and plugin-system support are explicitly out of scope 
 - [ ] Add RSS/Atom feeds for published articles and matrix updates.
 - [ ] Add lightweight subscription channel for new articles, matrix items, and courses.
 - [ ] Add public roadmap page for site/product development.
+- [ ] Add link for published articles and matrix items from admin panel.
 
 ## Bugs
 
@@ -839,6 +833,7 @@ Graph views, plugin APIs, and plugin-system support are explicitly out of scope 
   - [x] Fix Toast UI editor styling in dark theme so editing text and preview text remain readable and do not blend into the background.
   - [x] Fix the external resources modal: the Russian `add` button overflows the form, and both it and the save button should be green.
   - [x] Clarify which created external resource context field is Russian and which is English in the competency matrix question form.
+  - [ ] query `?page=n` passed in article public detail page (from list). It shouldn't.
 
 ## Refactoring
 
@@ -868,3 +863,11 @@ Graph views, plugin APIs, and plugin-system support are explicitly out of scope 
   translation contracts explicit where both languages are required.
 - [ ] Add upgrade and downgrade migration coverage for revision
   `0004_add_backend_owned_file_metadata`.
+- [ ] Move articles to personal web site 
+- [ ] Prepare repository split
+  - [x] Move Angular serving into a frontend-owned Docker image
+  - [x] Keep infrastructure nginx as the edge reverse proxy
+  - [ ] Move root AGENTS.md rules to backend and frontend
+  - [ ] Move backend, frontend, and infrastructure into separate repositories
+  - [ ] Configure independent image publishing for backend and frontend
+  - [ ] Update deployment workflow to consume published images from the infrastructure repository

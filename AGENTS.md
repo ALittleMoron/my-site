@@ -104,18 +104,9 @@ Portfolio and articles site
     details. Prefer grouping related changes under an existing larger milestone, such as auth,
     matrix, deployment, quality, localization, or content workflows, instead of creating a separate
     updates entry for every task.
-  - Treat every user correction and every explicit generally applicable instruction as a candidate
-    for durable project guidance. At the end of each task, determine whether it is likely to remain
-    useful in future sessions.
-  - Review the applicable `AGENTS.md` files for accuracy and relevance. Recommend only reusable
-    guidance; avoid narrow or task-specific instructions unless they document an important
-    exception or materially improve the description of the codebase, its conventions, or the
-    correct approach to working with the project.
-  - In every final task response, include a separate chat-only `AGENTS.md candidates` section. For
-    each candidate, state the concise proposed rule, the exact `AGENTS.md` file where it belongs,
-    and why recording it would be useful. If there are no candidates, say so explicitly. Proposals
-    may be written in Russian, but content added to an `AGENTS.md` file must be in English. Do not
-    write a candidate to any `AGENTS.md` file until the user explicitly approves it.
+  - In every final task response, include a separate chat-only `AGENTS.md candidates` section. If
+    there are no candidates, say so explicitly.
+  - Proposals may be written in Russian, but content added to an `AGENTS.md` file must be in English.
   - If no documentation, infrastructure, CI/CD, or instruction updates are needed, mention that check in the final response.
 - Use existing `make` targets for installation, checks, tests, migrations, and local runs when available instead of calling lower-level tools directly.
 - Never bypass Make targets for tests or checks. Test, lint, type-check, security, format-check,
